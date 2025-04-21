@@ -1,0 +1,135 @@
+/* Editor specific styles */
+
+#editor-container {
+  height: 100%;
+  overflow: hidden;
+}
+
+#input-contents {
+  width: 100%;
+  height: 100%;
+  font-family: 'Fira Code', 'Courier New', Courier, monospace;
+  font-size: 14px;
+  padding: 10px;
+  border: none;
+  resize: none;
+}
+
+/* CodeMirror customizations */
+.cm-editor {
+  height: 100%;
+  font-family: 'Fira Code', 'Courier New', Courier, monospace;
+}
+
+.cm-line {
+  padding: 0 4px;
+}
+
+.cm-gutters {
+  border-right: 1px solid var(--border-color);
+  background-color: #f7f7f7;
+}
+
+/* Error highlighting */
+.cm-error-line {
+  background-color: var(--error-color);
+}
+
+.cm-error-gutter {
+  color: var(--error-text);
+  font-weight: bold;
+}
+
+/* Syntax highlighting */
+.cm-keyword {
+  color: #708;
+}
+
+.cm-atom {
+  color: #219;
+}
+
+.cm-number {
+  color: #164;
+}
+
+.cm-def {
+  color: #00f;
+}
+
+.cm-variable {
+  color: #05a;
+}
+
+.cm-operator {
+  color: #aa22ff;
+  font-weight: bold;
+}
+
+.cm-comment {
+  color: #a50;
+  font-style: italic;
+}
+
+.cm-string {
+  color: #a11;
+}
+
+.cm-meta {
+  color: #555;
+}
+
+.cm-qualifier {
+  color: #555;
+}
+
+.cm-builtin {
+  color: #30a;
+}
+
+.cm-bracket {
+  color: #997;
+}
+
+.cm-tag {
+  color: #170;
+}
+
+.cm-attribute {
+  color: #00c;
+}
+
+/* Auto-completion */
+.cm-tooltip-autocomplete {
+  border: 1px solid var(--border-color);
+  background-color: white;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.cm-tooltip-autocomplete ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.cm-tooltip-autocomplete li {
+  padding: 4px 8px;
+  cursor: pointer;
+}
+
+.cm-tooltip-autocomplete li:hover,
+.cm-tooltip-autocomplete li.selected {
+  background-color: #eee;
+}
+
+/* Highlight matches */
+.cm-highlight {
+  background-color: var(--highlight-color);
+}
+
+.cm-highlight-scrollbar {
+  background-color: darkgreen;
+}

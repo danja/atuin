@@ -1,41 +1,43 @@
 {
-  "name": "trestle",
-  "version": "0.9.0",
-  "description": "A hierarchical todo list with SPARQL backend",
+  "name": "atuin",
+  "version": "1.0.0",
+  "description": "A Turtle RDF editor with graph visualization",
   "type": "module",
   "scripts": {
     "build": "webpack --mode production",
     "dev": "webpack serve --mode development",
-    "test": "jasmine --config=jasmine.json",
-    "docs": "jsdoc -c jsdoc.json",
-    "rp": "repomix -c repomix.config.json ."
+    "test": "jasmine",
+    "docs": "jsdoc -c jsdoc.json"
   },
   "keywords": [
-    "todo",
     "rdf",
-    "sparql",
-    "outliner",
-    "hierarchical"
+    "turtle",
+    "editor",
+    "graph",
+    "visualization"
   ],
-  "author": "Danny Ayers",
+  "author": "",
   "license": "MIT",
   "dependencies": {
-    "@rdfjs/data-model": "^2.0.1",
-    "@rdfjs/namespace": "^2.0.0",
-    "@rdfjs/parser-n3": "^2.0.1",
-    "loglevel": "^1.8.1",
-    "marked": "^5.0.0",
-    "rdf-ext": "^2.2.0"
+    "@codemirror/state": "^6.4.0",
+    "@codemirror/view": "^6.24.0",
+    "n3": "^1.17.2",
+    "vis-data": "^7.1.9",
+    "vis-network": "^9.1.6"
   },
   "devDependencies": {
     "chai": "^4.5.0",
     "copy-webpack-plugin": "^13.0.0",
-    "html-webpack-plugin": "^5.6.3",
-    "jasmine": "^4.6.0",
+    "css-loader": "^6.10.0",
+    "docdash": "^2.0.2",
+    "html-webpack-plugin": "^5.6.0",
+    "jasmine": "^5.1.0",
+    "jasmine-browser-runner": "^2.3.0",
+    "jasmine-core": "^5.1.0",
     "jsdoc": "^4.0.2",
-    "jsdom": "^26.1.0",
+    "style-loader": "^3.3.4",
     "webpack": "^5.89.0",
     "webpack-cli": "^5.1.4",
-    "webpack-dev-server": "^4.15.2"
+    "webpack-dev-server": "^4.15.1"
   }
 }
