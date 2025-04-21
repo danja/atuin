@@ -56,13 +56,38 @@ export class GraphVisualizer {
 
     // Set up network options
     const options = {
+      layout: {
+        randomSeed: undefined,
+        improvedLayout: true,
+        clusterThreshold: 200,
+        hierarchical: {
+          enabled: false,
+          levelSeparation: 300,
+          nodeSpacing: 100,
+          treeSpacing: 100,
+          blockShifting: true,
+          edgeMinimization: true,
+          parentCentralization: true,
+          direction: 'LR',        // UD, DU, LR, RL
+          sortMethod: 'hubsize',  // hubsize, directed
+          shakeTowards: 'leaves'  // roots, leaves
+        }
+      },
       physics: {
         enabled: !this.options.freeze,
-        barnesHut: {
-          gravitationalConstant: -2500,
-          springConstant: 0.001,
-          springLength: 50
-        }
+        //      barnesHut: {
+        //      gravitationalConstant: -2500,
+        //    springConstant: 0.001,
+        //  springLength: 50
+        // },
+        hierarchicalRepulsion: {
+          centralGravity: 0.0,
+          springLength: 100,
+          springConstant: 0.01,
+          nodeDistance: 120,
+          damping: 0.09,
+          avoidOverlap: 0
+        },
       },
       edges: {
         smooth: { type: 'continuous' }

@@ -8,9 +8,8 @@ import { EditorView, lineNumbers, highlightActiveLine } from '@codemirror/view'
 import { RDFParser } from './Parser.js'
 import { URIUtils } from '../utils/URIUtils.js'
 import { StreamLanguage } from '@codemirror/language'
-import { sparql } from '@codemirror/legacy-modes/mode/sparql' // SPARQL mode handles Turtle well
-
-
+// Import the new mode definition
+import { turtleMode } from './turtle-cm6-mode.js'
 
 /**
  * Manages the Turtle editor component
@@ -48,7 +47,8 @@ export class TurtleEditor {
       extensions: [
         lineNumbers(),
         highlightActiveLine(),
-        StreamLanguage.define(sparql), // <-- Add this line for Turtle syntax highlighting
+        // Use StreamLanguage.define with the imported mode object
+        StreamLanguage.define(turtleMode), // <-- Use the adapted Turtle mode
         EditorView.updateListener.of(update => {
           if (update.docChanged) {
             this._onContentChange()
@@ -66,7 +66,6 @@ export class TurtleEditor {
 
     // Hide original textarea
     this.element.style.display = 'none'
-
 
     // Check syntax for initial content
     this._onContentChange()
@@ -119,13 +118,27 @@ export class TurtleEditor {
       return
     }
 
-    this.view.dispatch({
-      changes: {
-        from: 0,
-        to: this.view.state.doc.length,
-        insert: content
-      }
-    })
+    // Check if view is already destroyed (can happen during teardown)
+    if (!this.view.dispatch) {
+      console.warn("Attempted to set value on a destroyed editor view.")
+      this.element.value = content // Fallback
+      return
+    }
+
+    try {
+      this.view.dispatch({
+        changes: {
+          from: 0,
+          to: this.view.state.doc.length,
+          insert: content
+        }
+      })
+    } catch (e) {
+      console.error("Error dispatching editor update:", e)
+      // Fallback if dispatch fails for some reason
+      this.element.value = content
+      // Potentially try to re-initialize or handle the error state
+    }
 
     // Reset state
     this.prefixes = {}
@@ -143,9 +156,13 @@ export class TurtleEditor {
 
     const content = this.getValue()
 
+    // Reset dynamic names before parsing
+    this.dynamicNames = {}
+
     // Skip if empty
     if (!content.trim()) {
       this.changeSyntaxCheckState('passed')
+      this.prefixes = {} // Clear prefixes if content is empty
       return
     }
 
@@ -156,17 +173,32 @@ export class TurtleEditor {
       },
       onTriple: (triple) => {
         // Add to dynamic names
-        const subjects = URIUtils.splitNamespace(triple.subject)
-        const predicates = URIUtils.splitNamespace(triple.predicate)
-        const objects = URIUtils.splitNamespace(triple.object)
-
-        this._addToDynamicNames(subjects.namespace, subjects.name)
-        this._addToDynamicNames(predicates.namespace, predicates.name)
-        this._addToDynamicNames(objects.namespace, objects.name)
+        if (triple.subject.termType === 'NamedNode' || triple.subject.termType === 'BlankNode') {
+          const subjects = URIUtils.splitNamespace(triple.subject.value, triple.subject.termType === 'BlankNode')
+          this._addToDynamicNames(subjects.namespace, subjects.name)
+        }
+        if (triple.predicate.termType === 'NamedNode') {
+          const predicates = URIUtils.splitNamespace(triple.predicate.value)
+          this._addToDynamicNames(predicates.namespace, predicates.name)
+        }
+        if (triple.object.termType === 'NamedNode' || triple.object.termType === 'BlankNode') {
+          const objects = URIUtils.splitNamespace(triple.object.value, triple.object.termType === 'BlankNode')
+          this._addToDynamicNames(objects.namespace, objects.name)
+        } else if (triple.object.termType === 'Literal' && triple.object.datatype?.termType === 'NamedNode') {
+          // Add datatype URIs to dynamic names as well
+          const datatypes = URIUtils.splitNamespace(triple.object.datatype.value)
+          this._addToDynamicNames(datatypes.namespace, datatypes.name)
+        }
       },
       onComplete: (prefixes) => {
         this.prefixes = prefixes || {}
         this.changeSyntaxCheckState('passed')
+      },
+      onPrefix: (prefix, iri) => {
+        // Also add prefixes themselves to dynamic names for potential highlighting/linking
+        this._addToDynamicNames('prefix', prefix) // Use a pseudo-namespace 'prefix'
+        const iriParts = URIUtils.splitNamespace(iri.value)
+        this._addToDynamicNames(iriParts.namespace, iriParts.name)
       }
     })
   }
@@ -174,11 +206,17 @@ export class TurtleEditor {
   /**
    * Add a name to dynamic names
    * @private
-   * @param {string} namespace - The namespace
+   * @param {string} namespace - The namespace or pseudo-namespace (like 'prefix', '_:')
    * @param {string} name - The local name
    */
   _addToDynamicNames(namespace, name) {
-    if (!namespace || !name) return
+    // Ensure namespace/name are valid strings before adding
+    if (typeof namespace !== 'string' || typeof name !== 'string' || !name) return
+
+    // Normalize blank node namespace
+    if (namespace === '_:') {
+      namespace = '_:' // Consistent blank node pseudo-namespace
+    }
 
     this.dynamicNames[namespace] = this.dynamicNames[namespace] || {}
     this.dynamicNames[namespace][name] = true
@@ -192,65 +230,56 @@ export class TurtleEditor {
     // Simplified highlighting without using state effects
     if (!nodeId || !this.view) return
 
-    console.log(`Highlighting node: ${nodeId}`)
+    this.logger.debug(`Highlighting node (placeholder): ${nodeId}`)
 
-    // Since we don't have full CodeMirror 6 extensions set up,
-    // we'll just log the action instead of actual highlighting
+    // Since we don't have full CodeMirror 6 extensions set up for highlighting,
+    // we'll just log the action. Implementing actual highlighting would require
+    // creating decorations and managing them through state fields/effects,
+    // which is more involved.
   }
 
   /**
-   * Change the syntax check state
-   * @param {string} newState - The new state ('pending', 'working', 'passed', 'failed', 'off')
-   * @param {string} [error] - Error message, if any
+   * Change the syntax check state and notify listeners
+   * @private
+   * @param {'pending' | 'working' | 'passed' | 'failed'} state - The new state
+   * @param {string} [message] - Optional error message
    */
-  changeSyntaxCheckState(newState, error) {
-    if (newState === this.syntaxCheckState) return
+  changeSyntaxCheckState(state, message = '') {
+    if (this.syntaxCheckState !== state) {
+      this.syntaxCheckState = state
+      this.logger.debug(`Syntax check state: ${state}${message ? ` (${message})` : ''}`)
 
-    this.syntaxCheckState = newState
-
-    // Notify state change
-    const event = new CustomEvent('syntax-check-state-change', {
-      detail: {
-        state: newState,
-        error: error
-      }
-    })
-
-    document.dispatchEvent(event)
-  }
-
-  /**
-   * Register a change listener
-   * @param {Function} callback - The callback function to call on change
-   */
-  onChange(callback) {
-    this.changeCallbacks.push(callback)
-  }
-
-  /**
-   * Remove a change listener
-   * @param {Function} callback - The callback function to remove
-   */
-  offChange(callback) {
-    const index = this.changeCallbacks.indexOf(callback)
-    if (index !== -1) {
-      this.changeCallbacks.splice(index, 1)
+      // Dispatch a custom event or call a method to update UI (e.g., status indicator)
+      // Example:
+      const event = new CustomEvent('syntax-check-change', {
+        detail: { state, message }
+      })
+      this.view?.dom.dispatchEvent(event) // Dispatch from the editor's DOM element
     }
   }
 
   /**
-   * Get the prefixes used in the document
-   * @returns {Object} - The prefixes
+   * Register a callback for content changes
+   * @param {Function} callback - The callback function
    */
-  getPrefixes() {
-    return this.prefixes
+  onChange(callback) {
+    if (typeof callback === 'function') {
+      this.changeCallbacks.push(callback)
+    }
   }
 
   /**
-   * Get the dynamic names used in the document
-   * @returns {Object} - The dynamic names
+   * Destroy the editor instance
    */
-  getDynamicNames() {
-    return this.dynamicNames
+  destroy() {
+    if (this.view) {
+      this.view.destroy()
+      this.view = null
+      this.logger.debug('Editor destroyed')
+    }
+    // Make original textarea visible again if needed
+    // this.element.style.display = ''; // Uncomment if needed
+    this.changeCallbacks = [] // Clear listeners
+    clearTimeout(this.syntaxCheckTimeout) // Clear any pending check
   }
 }
