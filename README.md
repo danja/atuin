@@ -1,6 +1,6 @@
-# Atuin - Modern Turtle RDF Editor
+# Atuin - Turtle RDF Editor
 
-**not yet functional**
+**mostly functional**
 
 Atuin is a web-based editor for Turtle RDF files with an integrated graph visualization. This modern implementation uses vanilla JavaScript with ES modules, providing a clean, modular architecture.
 

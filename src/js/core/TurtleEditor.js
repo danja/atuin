@@ -7,6 +7,10 @@ import { EditorState } from '@codemirror/state'
 import { EditorView, lineNumbers, highlightActiveLine } from '@codemirror/view'
 import { RDFParser } from './Parser.js'
 import { URIUtils } from '../utils/URIUtils.js'
+import { StreamLanguage } from '@codemirror/language'
+import { sparql } from '@codemirror/legacy-modes/mode/sparql' // SPARQL mode handles Turtle well
+
+
 
 /**
  * Manages the Turtle editor component
@@ -44,11 +48,13 @@ export class TurtleEditor {
       extensions: [
         lineNumbers(),
         highlightActiveLine(),
+        StreamLanguage.define(sparql), // <-- Add this line for Turtle syntax highlighting
         EditorView.updateListener.of(update => {
           if (update.docChanged) {
             this._onContentChange()
           }
         })
+        // Potentially add more extensions like basicSetup, history, etc. if needed
       ]
     })
 
@@ -60,6 +66,7 @@ export class TurtleEditor {
 
     // Hide original textarea
     this.element.style.display = 'none'
+
 
     // Check syntax for initial content
     this._onContentChange()
