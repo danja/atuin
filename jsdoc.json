@@ -1,0 +1,29 @@
+{
+  "tags": {
+    "allowUnknownTags": true,
+    "dictionaries": ["jsdoc", "closure"]
+  },
+  "source": {
+    "include": ["js", "README.md"],
+    "exclude": ["node_modules"],
+    "includePattern": ".+\\.js(doc|x)?$",
+    "excludePattern": "(^|\\/|\\\\)_"
+  },
+  "plugins": [
+    "plugins/markdown"
+  ],
+  "templates": {
+    "cleverLinks": false,
+    "monospaceLinks": false,
+    "default": {
+      "outputSourceFiles": true,
+      "includeDate": false
+    }
+  },
+  "opts": {
+    "destination": "./docs/jsdoc",
+    "encoding": "utf8",
+    "recurse": true,
+    "template": "node_modules/docdash"
+  }
+}
