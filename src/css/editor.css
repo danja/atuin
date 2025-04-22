@@ -1,5 +1,3 @@
-/* Editor specific styles */
-
 #editor-container {
   height: 100%;
   overflow: hidden;
@@ -15,7 +13,7 @@
   resize: none;
 }
 
-/* CodeMirror customizations */
+/* Editor styling */
 .cm-editor {
   height: 100%;
   font-family: 'Fira Code', 'Courier New', Courier, monospace;
@@ -40,7 +38,7 @@
   font-weight: bold;
 }
 
-/* Syntax highlighting */
+/* Syntax highlighting colors */
 .cm-keyword {
   color: #708;
 }
@@ -99,7 +97,7 @@
   color: #00c;
 }
 
-/* Auto-completion */
+/* Autocomplete styling */
 .cm-tooltip-autocomplete {
   border: 1px solid var(--border-color);
   background-color: white;
@@ -125,11 +123,67 @@
   background-color: #eee;
 }
 
-/* Highlight matches */
+/* Node highlighting */
 .cm-highlight {
   background-color: var(--highlight-color);
+  border-radius: 2px;
+  transition: background-color 0.2s ease;
+  text-decoration: underline;
+  text-decoration-style: wavy;
+  text-decoration-color: darkgreen;
+}
+
+.cm-highlight:hover {
+  background-color: rgba(144, 238, 144, 0.7);
 }
 
 .cm-highlight-scrollbar {
   background-color: darkgreen;
+  width: 8px !important;
+}
+
+/* Turtle-specific syntax */
+.cm-predicate {
+  color: #0077aa;
+  font-weight: bold;
+}
+
+.cm-a {
+  color: #aa6600;
+  font-weight: bold;
+}
+
+.cm-prefixName {
+  color: #0055aa;
+}
+
+.cm-iri {
+  color: #0066cc;
+}
+
+.cm-literal {
+  color: #a31515;
+}
+
+.cm-lang {
+  color: #9900cc;
+}
+
+.cm-datatype {
+  color: #669900;
+}
+
+.cm-boolean {
+  color: #0000ff;
+}
+
+/* Animation for highlight pulse effect */
+@keyframes highlight-pulse {
+  0% { background-color: rgba(144, 238, 144, 0.3); }
+  50% { background-color: rgba(144, 238, 144, 0.8); }
+  100% { background-color: rgba(144, 238, 144, 0.3); }
+}
+
+.cm-highlight.pulse {
+  animation: highlight-pulse 1s ease;
 }

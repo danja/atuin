@@ -1,21 +1,20 @@
-/**
- * Turtle RDF Editor component
- * @module core/TurtleEditor
- */
-
 import { EditorState } from '@codemirror/state'
 import { EditorView, lineNumbers, highlightActiveLine } from '@codemirror/view'
 import { RDFParser } from './Parser.js'
 import { URIUtils } from '../utils/URIUtils.js'
+import { turtle } from './TurtleMode.js'
+import { syntaxErrorHighlighter, setSyntaxError } from './SyntaxErrorHighlighter.js'
+import { nodeHighlighter, setHighlightedNode } from './NodeHighlighter.js'
 
 /**
- * Manages the Turtle editor component
+ * Editor component with Turtle syntax support and error highlighting
  */
 export class TurtleEditor {
   /**
    * Create a new TurtleEditor
-   * @param {HTMLTextAreaElement} textareaElement - The textarea element to replace
-   * @param {Object} logger - Logger service
+   * 
+   * @param {HTMLElement} textareaElement - The textarea to replace with the editor
+   * @param {LoggerService} logger - The logger service
    */
   constructor(textareaElement, logger) {
     this.element = textareaElement
@@ -26,24 +25,27 @@ export class TurtleEditor {
     this.changeCallbacks = []
     this.syntaxCheckState = 'pending'
 
-    // Custom editor state for prefixes
+    // Store for prefixes and dynamic names found in the content
     this.prefixes = {}
     this.dynamicNames = {}
 
-    // Syntax check debounce
+    // Debounce syntax checking
     this.syntaxCheckTimeout = null
   }
 
   /**
-   * Initialize the editor
+   * Initialize the editor with CodeMirror
    */
   initialize() {
-    // Create a simple editor state
+    // Create initial editor state
     const startState = EditorState.create({
       doc: this.element.value,
       extensions: [
         lineNumbers(),
         highlightActiveLine(),
+        turtle(),
+        syntaxErrorHighlighter(),
+        nodeHighlighter(),
         EditorView.updateListener.of(update => {
           if (update.docChanged) {
             this._onContentChange()
@@ -52,42 +54,40 @@ export class TurtleEditor {
       ]
     })
 
-    // Create editor view
+    // Create editor view and replace the textarea
     this.view = new EditorView({
       state: startState,
       parent: this.element.parentNode
     })
 
-    // Hide original textarea
+    // Hide the original textarea
     this.element.style.display = 'none'
 
-    // Check syntax for initial content
+    // Initial syntax check
     this._onContentChange()
 
-    this.logger.debug('Editor initialized')
+    this.logger.debug('Editor initialized with Turtle syntax highlighting')
   }
 
   /**
-   * Handle content changes
-   * @private
+   * Handle content changes in the editor
    */
   _onContentChange() {
-    // Update the original textarea value
+    // Update the hidden textarea value for form submission
     this.element.value = this.getValue()
 
-    // Debounce syntax checking
+    // Debounce syntax checking to avoid too frequent checks
     clearTimeout(this.syntaxCheckTimeout)
     this.syntaxCheckTimeout = setTimeout(() => {
       this.checkSyntax()
     }, 500)
 
-    // Notify subscribers
+    // Notify change listeners
     this._notifyChangeListeners()
   }
 
   /**
-   * Notify change listeners
-   * @private
+   * Notify all registered change listeners with the current content
    */
   _notifyChangeListeners() {
     const content = this.getValue()
@@ -96,7 +96,8 @@ export class TurtleEditor {
 
   /**
    * Get the current editor content
-   * @returns {string} - The editor content
+   * 
+   * @returns {string} The editor content
    */
   getValue() {
     return this.view ? this.view.state.doc.toString() : this.element.value
@@ -104,6 +105,7 @@ export class TurtleEditor {
 
   /**
    * Set the editor content
+   * 
    * @param {string} content - The content to set
    */
   setValue(content) {
@@ -120,35 +122,45 @@ export class TurtleEditor {
       }
     })
 
-    // Reset state
+    // Reset prefixes and dynamic names
     this.prefixes = {}
     this.dynamicNames = {}
 
-    // Check syntax
+    // Check syntax for the new content
     this.checkSyntax()
   }
 
   /**
-   * Check the syntax of the current content
+   * Check syntax of the current content
    */
   checkSyntax() {
     this.changeSyntaxCheckState('working')
 
     const content = this.getValue()
 
-    // Skip if empty
+    // Skip empty content
     if (!content.trim()) {
       this.changeSyntaxCheckState('passed')
       return
     }
 
-    // Parse the content
+    // Parse the content to check syntax
     this.parser.parse(content, {
       onError: (error) => {
         this.changeSyntaxCheckState('failed', error.message)
+
+        // Highlight the error line in the editor
+        if (this.view && error.line) {
+          this.view.dispatch({
+            effects: setSyntaxError.of({
+              line: error.line,
+              message: error.message
+            })
+          })
+        }
       },
       onTriple: (triple) => {
-        // Add to dynamic names
+        // Extract and store namespaces and names for autocompletion
         const subjects = URIUtils.splitNamespace(triple.subject)
         const predicates = URIUtils.splitNamespace(triple.predicate)
         const objects = URIUtils.splitNamespace(triple.object)
@@ -160,13 +172,23 @@ export class TurtleEditor {
       onComplete: (prefixes) => {
         this.prefixes = prefixes || {}
         this.changeSyntaxCheckState('passed')
+
+        // Clear error highlighting
+        if (this.view) {
+          this.view.dispatch({
+            effects: setSyntaxError.of({
+              line: 0,
+              message: ''
+            })
+          })
+        }
       }
     })
   }
 
   /**
-   * Add a name to dynamic names
-   * @private
+   * Add namespace and name to dynamic names for autocompletion
+   * 
    * @param {string} namespace - The namespace
    * @param {string} name - The local name
    */
@@ -178,30 +200,80 @@ export class TurtleEditor {
   }
 
   /**
-   * Highlight nodes in the editor
-   * @param {string} nodeId - The node ID to highlight
+   * Highlight a node in the editor when selected in the graph visualization
+   * 
+   * @param {string} nodeId - The ID of the node to highlight
    */
   highlightNode(nodeId) {
-    // Simplified highlighting without using state effects
     if (!nodeId || !this.view) return
 
-    console.log(`Highlighting node: ${nodeId}`)
+    // Dispatch the effect to highlight this node
+    this.view.dispatch({
+      effects: setHighlightedNode.of(nodeId)
+    })
 
-    // Since we don't have full CodeMirror 6 extensions set up,
-    // we'll just log the action instead of actual highlighting
+    this.logger.debug(`Highlighting node: ${nodeId}`)
+
+    // Find and scroll to the first occurrence of the node
+    const doc = this.view.state.doc.toString()
+    let searchVariations = [
+      `<${nodeId}>`, // Full URI with angle brackets
+      URIUtils.isLiteral(nodeId) ? null : URIUtils.shrinkUri(nodeId, this.prefixes) // Shortened form
+    ].filter(Boolean)
+
+    if (URIUtils.isLiteral(nodeId)) {
+      searchVariations.push(nodeId) // The literal value itself
+
+      // Also look for the raw value without quotes
+      if (nodeId.startsWith('"') && nodeId.endsWith('"')) {
+        searchVariations.push(nodeId.substring(1, nodeId.length - 1))
+      }
+    }
+
+    // Find the first occurrence of any variation
+    let firstPos = -1
+    for (const variation of searchVariations) {
+      const pos = doc.indexOf(variation)
+      if (pos !== -1 && (firstPos === -1 || pos < firstPos)) {
+        firstPos = pos
+      }
+    }
+
+    // If found, scroll to the position
+    if (firstPos !== -1) {
+      const line = this.view.state.doc.lineAt(firstPos)
+      this.view.dispatch({
+        effects: EditorView.scrollIntoView(firstPos, {
+          y: "center"
+        })
+      })
+
+      // Flash the highlight briefly to make it more noticeable
+      setTimeout(() => {
+        const highlights = document.querySelectorAll('.cm-highlight')
+        highlights.forEach(highlight => {
+          highlight.classList.add('pulse')
+
+          setTimeout(() => {
+            highlight.classList.remove('pulse')
+          }, 1000)
+        })
+      }, 100)
+    }
   }
 
   /**
-   * Change the syntax check state
-   * @param {string} newState - The new state ('pending', 'working', 'passed', 'failed', 'off')
-   * @param {string} [error] - Error message, if any
+   * Change the syntax check state and dispatch event
+   * 
+   * @param {string} newState - The new state
+   * @param {string} error - The error message (if any)
    */
   changeSyntaxCheckState(newState, error) {
     if (newState === this.syntaxCheckState) return
 
     this.syntaxCheckState = newState
 
-    // Notify state change
+    // Dispatch custom event to notify UI
     const event = new CustomEvent('syntax-check-state-change', {
       detail: {
         state: newState,
@@ -213,16 +285,18 @@ export class TurtleEditor {
   }
 
   /**
-   * Register a change listener
-   * @param {Function} callback - The callback function to call on change
+   * Register a callback to be called when content changes
+   * 
+   * @param {function} callback - The callback function
    */
   onChange(callback) {
     this.changeCallbacks.push(callback)
   }
 
   /**
-   * Remove a change listener
-   * @param {Function} callback - The callback function to remove
+   * Remove a previously registered change callback
+   * 
+   * @param {function} callback - The callback to remove
    */
   offChange(callback) {
     const index = this.changeCallbacks.indexOf(callback)
@@ -232,16 +306,18 @@ export class TurtleEditor {
   }
 
   /**
-   * Get the prefixes used in the document
-   * @returns {Object} - The prefixes
+   * Get the prefixes found in the content
+   * 
+   * @returns {Object} The prefixes
    */
   getPrefixes() {
     return this.prefixes
   }
 
   /**
-   * Get the dynamic names used in the document
-   * @returns {Object} - The dynamic names
+   * Get the dynamic names found in the content
+   * 
+   * @returns {Object} The dynamic names
    */
   getDynamicNames() {
     return this.dynamicNames
