@@ -13,7 +13,7 @@
   resize: none;
 }
 
-/* Editor styling */
+/* CodeMirror editor styles */
 .cm-editor {
   height: 100%;
   font-family: 'Fira Code', 'Courier New', Courier, monospace;
@@ -38,7 +38,7 @@
   font-weight: bold;
 }
 
-/* Syntax highlighting colors */
+/* Turtle syntax highlighting */
 .cm-keyword {
   color: #708;
 }
@@ -97,7 +97,7 @@
   color: #00c;
 }
 
-/* Autocomplete styling */
+/* Autocomplete tooltips */
 .cm-tooltip-autocomplete {
   border: 1px solid var(--border-color);
   background-color: white;
@@ -142,7 +142,7 @@
   width: 8px !important;
 }
 
-/* Turtle-specific syntax */
+/* Turtle specific token styles */
 .cm-predicate {
   color: #0077aa;
   font-weight: bold;
@@ -177,7 +177,7 @@
   color: #0000ff;
 }
 
-/* Animation for highlight pulse effect */
+/* Highlighting animations */
 @keyframes highlight-pulse {
   0% { background-color: rgba(144, 238, 144, 0.3); }
   50% { background-color: rgba(144, 238, 144, 0.8); }

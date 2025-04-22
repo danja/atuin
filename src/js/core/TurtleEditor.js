@@ -1,3 +1,4 @@
+import { turtleTheme } from './TurtleTheme.js'
 import { EditorState } from '@codemirror/state'
 import { EditorView, lineNumbers, highlightActiveLine } from '@codemirror/view'
 import { RDFParser } from './Parser.js'
@@ -7,14 +8,14 @@ import { syntaxErrorHighlighter, setSyntaxError } from './SyntaxErrorHighlighter
 import { nodeHighlighter, setHighlightedNode } from './NodeHighlighter.js'
 
 /**
- * Editor component with Turtle syntax support and error highlighting
+ * Editor component for RDF Turtle syntax with syntax highlighting
  */
 export class TurtleEditor {
   /**
-   * Create a new TurtleEditor
-   * 
-   * @param {HTMLElement} textareaElement - The textarea to replace with the editor
-   * @param {LoggerService} logger - The logger service
+   * Creates a new TurtleEditor
+   *
+   * @param {HTMLElement} textareaElement - The textarea element to replace
+   * @param {Object} logger - Logger service
    */
   constructor(textareaElement, logger) {
     this.element = textareaElement
@@ -25,7 +26,7 @@ export class TurtleEditor {
     this.changeCallbacks = []
     this.syntaxCheckState = 'pending'
 
-    // Store for prefixes and dynamic names found in the content
+    // Store prefixes and dynamic names for autocompletion
     this.prefixes = {}
     this.dynamicNames = {}
 
@@ -37,13 +38,17 @@ export class TurtleEditor {
    * Initialize the editor with CodeMirror
    */
   initialize() {
-    // Create initial editor state
+    // Add the syntax highlighting styles
+    this._addSyntaxStyles()
+
+    // Create the editor
     const startState = EditorState.create({
       doc: this.element.value,
       extensions: [
         lineNumbers(),
         highlightActiveLine(),
         turtle(),
+        turtleTheme, // <-- This line was missing in the original code
         syntaxErrorHighlighter(),
         nodeHighlighter(),
         EditorView.updateListener.of(update => {
@@ -54,7 +59,7 @@ export class TurtleEditor {
       ]
     })
 
-    // Create editor view and replace the textarea
+    // Create the editor view
     this.view = new EditorView({
       state: startState,
       parent: this.element.parentNode
@@ -70,13 +75,60 @@ export class TurtleEditor {
   }
 
   /**
-   * Handle content changes in the editor
+   * Add syntax highlighting styles to the document
+   */
+  _addSyntaxStyles() {
+    const styleEl = document.createElement('style')
+    styleEl.textContent = `
+      /* CodeMirror 6 syntax highlighting */
+      .cm-content .tok-keyword { color: #7e57c2; font-weight: bold; }
+      .cm-content .tok-definition { color: #0277bd; font-weight: bold; }
+      .cm-content .tok-string { color: #d81b60; }
+      .cm-content .tok-comment { color: #546e7a; font-style: italic; }
+      .cm-content .tok-number { color: #00796b; }
+      .cm-content .tok-bool { color: #2e7d32; }
+      .cm-content .tok-operator { color: #ff6f00; font-weight: bold; }
+      .cm-content .tok-propertyName { color: #6200ea; font-weight: bold; }
+      .cm-content .tok-atom { color: #f57c00; font-weight: bold; }
+      .cm-content .tok-typeName { color: #039be5; }
+      .cm-content .tok-invalid { color: #c62828; text-decoration: wavy underline; }
+      .cm-content .tok-bracket { color: #616161; }
+
+      /* Node highlighting */
+      .cm-highlight {
+        background-color: rgba(144, 238, 144, 0.4);
+        border-radius: 2px;
+        transition: background-color 0.2s ease;
+        text-decoration: underline;
+        text-decoration-style: wavy;
+        text-decoration-color: darkgreen;
+      }
+
+      .cm-highlight:hover {
+        background-color: rgba(144, 238, 144, 0.7);
+      }
+
+      @keyframes highlight-pulse {
+        0% { background-color: rgba(144, 238, 144, 0.3); }
+        50% { background-color: rgba(144, 238, 144, 0.8); }
+        100% { background-color: rgba(144, 238, 144, 0.3); }
+      }
+
+      .cm-highlight.pulse {
+        animation: highlight-pulse 1s ease;
+      }
+    `
+    document.head.appendChild(styleEl)
+  }
+
+  /**
+   * Handler for content changes
    */
   _onContentChange() {
-    // Update the hidden textarea value for form submission
+    // Update the original textarea value
     this.element.value = this.getValue()
 
-    // Debounce syntax checking to avoid too frequent checks
+    // Debounce syntax checking
     clearTimeout(this.syntaxCheckTimeout)
     this.syntaxCheckTimeout = setTimeout(() => {
       this.checkSyntax()
@@ -87,7 +139,7 @@ export class TurtleEditor {
   }
 
   /**
-   * Notify all registered change listeners with the current content
+   * Notify all registered change listeners
    */
   _notifyChangeListeners() {
     const content = this.getValue()
@@ -96,8 +148,8 @@ export class TurtleEditor {
 
   /**
    * Get the current editor content
-   * 
-   * @returns {string} The editor content
+   *
+   * @returns {string} Current editor content
    */
   getValue() {
     return this.view ? this.view.state.doc.toString() : this.element.value
@@ -105,8 +157,8 @@ export class TurtleEditor {
 
   /**
    * Set the editor content
-   * 
-   * @param {string} content - The content to set
+   *
+   * @param {string} content - The new content
    */
   setValue(content) {
     if (!this.view) {
@@ -122,16 +174,16 @@ export class TurtleEditor {
       }
     })
 
-    // Reset prefixes and dynamic names
+    // Reset cached data
     this.prefixes = {}
     this.dynamicNames = {}
 
-    // Check syntax for the new content
+    // Check syntax
     this.checkSyntax()
   }
 
   /**
-   * Check syntax of the current content
+   * Check the syntax of the current content
    */
   checkSyntax() {
     this.changeSyntaxCheckState('working')
@@ -144,12 +196,12 @@ export class TurtleEditor {
       return
     }
 
-    // Parse the content to check syntax
+    // Parse the content
     this.parser.parse(content, {
       onError: (error) => {
         this.changeSyntaxCheckState('failed', error.message)
 
-        // Highlight the error line in the editor
+        // Highlight the error in the editor
         if (this.view && error.line) {
           this.view.dispatch({
             effects: setSyntaxError.of({
@@ -160,7 +212,7 @@ export class TurtleEditor {
         }
       },
       onTriple: (triple) => {
-        // Extract and store namespaces and names for autocompletion
+        // Extract namespace and name for autocompletion
         const subjects = URIUtils.splitNamespace(triple.subject)
         const predicates = URIUtils.splitNamespace(triple.predicate)
         const objects = URIUtils.splitNamespace(triple.object)
@@ -173,7 +225,7 @@ export class TurtleEditor {
         this.prefixes = prefixes || {}
         this.changeSyntaxCheckState('passed')
 
-        // Clear error highlighting
+        // Clear error highlights
         if (this.view) {
           this.view.dispatch({
             effects: setSyntaxError.of({
@@ -188,7 +240,7 @@ export class TurtleEditor {
 
   /**
    * Add namespace and name to dynamic names for autocompletion
-   * 
+   *
    * @param {string} namespace - The namespace
    * @param {string} name - The local name
    */
@@ -201,7 +253,7 @@ export class TurtleEditor {
 
   /**
    * Highlight a node in the editor when selected in the graph visualization
-   * 
+   *
    * @param {string} nodeId - The ID of the node to highlight
    */
   highlightNode(nodeId) {
@@ -263,17 +315,17 @@ export class TurtleEditor {
   }
 
   /**
-   * Change the syntax check state and dispatch event
-   * 
+   * Change the syntax check state
+   *
    * @param {string} newState - The new state
-   * @param {string} error - The error message (if any)
+   * @param {string} error - Optional error message
    */
   changeSyntaxCheckState(newState, error) {
     if (newState === this.syntaxCheckState) return
 
     this.syntaxCheckState = newState
 
-    // Dispatch custom event to notify UI
+    // Dispatch event for UI to update
     const event = new CustomEvent('syntax-check-state-change', {
       detail: {
         state: newState,
@@ -285,18 +337,18 @@ export class TurtleEditor {
   }
 
   /**
-   * Register a callback to be called when content changes
-   * 
-   * @param {function} callback - The callback function
+   * Register a change listener
+   *
+   * @param {Function} callback - Callback function
    */
   onChange(callback) {
     this.changeCallbacks.push(callback)
   }
 
   /**
-   * Remove a previously registered change callback
-   * 
-   * @param {function} callback - The callback to remove
+   * Remove a change listener
+   *
+   * @param {Function} callback - Callback to remove
    */
   offChange(callback) {
     const index = this.changeCallbacks.indexOf(callback)
@@ -306,18 +358,18 @@ export class TurtleEditor {
   }
 
   /**
-   * Get the prefixes found in the content
-   * 
-   * @returns {Object} The prefixes
+   * Get the current prefixes
+   *
+   * @returns {Object} Map of prefixes to namespaces
    */
   getPrefixes() {
     return this.prefixes
   }
 
   /**
-   * Get the dynamic names found in the content
-   * 
-   * @returns {Object} The dynamic names
+   * Get the dynamic names for autocompletion
+   *
+   * @returns {Object} Map of namespaces to names
    */
   getDynamicNames() {
     return this.dynamicNames

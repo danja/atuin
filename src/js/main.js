@@ -4,6 +4,10 @@ import { LoggerService } from './services/LoggerService.js'
 import { UIManager } from './ui/UIManager.js'
 import { SplitPaneManager } from './ui/SplitPaneManager.js'
 
+import '../css/main.css'
+import '../css/editor.css'
+import '../css/graph.css'
+
 // Sample Turtle content for initial editor loading
 const sampleContent = `@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
