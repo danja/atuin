@@ -1,18 +1,19 @@
 /**
- * Utilities for handling URIs and IRIs in RDF
- * @module utils/URIUtils
- */
-
-/**
- * Utilities for URI/IRI handling
+ * Utility class for working with RDF URIs
  */
 export class URIUtils {
   /**
-   * Split a URI into namespace and local name
-   * @param {string} uri - The URI to split
-   * @returns {Object} - Object with namespace and name properties
+   * Split a URI into namespace and local name parts
+   * 
+   * @param {string|Object} uri - URI string or RDFJS term
+   * @returns {Object} Object with namespace and name properties
    */
   static splitNamespace(uri) {
+    // Handle RDFJS term objects
+    if (uri && typeof uri === 'object' && uri.value) {
+      uri = uri.value
+    }
+
     if (!uri || typeof uri !== 'string') {
       return { namespace: '', name: '' }
     }
@@ -38,32 +39,54 @@ export class URIUtils {
   }
 
   /**
-   * Check if a string is an RDF literal
-   * @param {string} value - The value to check
+   * Check if a string or term is an RDF literal
+   * 
+   * @param {string|Object} value - The value to check
    * @returns {boolean} - True if it's a literal
    */
   static isLiteral(value) {
+    // Handle RDFJS term objects
+    if (value && typeof value === 'object') {
+      // Check if it's a Literal term
+      if (value.termType === 'Literal') {
+        return true
+      }
+
+      // If it has a value property, extract that
+      if (value.value) {
+        value = value.value
+      } else {
+        return false
+      }
+    }
+
     if (!value || typeof value !== 'string') {
       return false
     }
 
-    // Simple check for common literal patterns
+    // Check for literal indicators in the string value
     return (
       value.startsWith('"') ||
       value.startsWith("'") ||
-      /^[+-]?\d+(\.\d+)?$/.test(value) || // Numbers
+      /^[+-]?\d+(\.\d+)?$/.test(value) ||
       value === 'true' ||
       value === 'false'
     )
   }
 
   /**
-   * Shrink a URI using prefixes
-   * @param {string} uri - The URI to shrink
-   * @param {Object} prefixes - The prefix mappings
-   * @returns {string} - The shortened URI
+   * Shrink a URI using namespace prefixes
+   * 
+   * @param {string|Object} uri - URI string or RDFJS term
+   * @param {Object} prefixes - Prefix mappings
+   * @returns {string} The shortened URI
    */
   static shrinkUri(uri, prefixes) {
+    // Handle RDFJS term objects
+    if (uri && typeof uri === 'object' && uri.value) {
+      uri = uri.value
+    }
+
     if (!uri || typeof uri !== 'string' || this.isLiteral(uri)) {
       return uri
     }
@@ -78,12 +101,18 @@ export class URIUtils {
   }
 
   /**
-   * Expand a prefixed name to a full URI
-   * @param {string} prefixed - The prefixed name
-   * @param {Object} prefixes - The prefix mappings
-   * @returns {string} - The expanded URI
+   * Expand a prefixed URI to its full form
+   * 
+   * @param {string|Object} prefixed - Prefixed URI string or RDFJS term
+   * @param {Object} prefixes - Prefix mappings
+   * @returns {string} The expanded URI
    */
   static expandPrefixed(prefixed, prefixes) {
+    // Handle RDFJS term objects
+    if (prefixed && typeof prefixed === 'object' && prefixed.value) {
+      prefixed = prefixed.value
+    }
+
     if (!prefixed || typeof prefixed !== 'string' || this.isLiteral(prefixed)) {
       return prefixed
     }
@@ -104,14 +133,15 @@ export class URIUtils {
       return `${prefixes[prefix]}${local}`
     }
 
-    // If prefix not found, return as is
+    // Return original if prefix not found
     return prefixed
   }
 
   /**
-   * Extract the base URI from Turtle content
-   * @param {string} content - The content to analyze
-   * @returns {string|null} - The base URI or null if not found
+   * Extract base URI from Turtle content
+   * 
+   * @param {string} content - Turtle content
+   * @returns {string|null} The base URI or null if not found
    */
   static extractBaseUri(content) {
     if (!content || typeof content !== 'string') {
@@ -123,9 +153,10 @@ export class URIUtils {
   }
 
   /**
-   * Extract prefixes from Turtle content
-   * @param {string} content - The content to analyze
-   * @returns {Object} - The prefix mappings
+   * Extract prefix declarations from Turtle content
+   * 
+   * @param {string} content - Turtle content
+   * @returns {Object} Map of prefix to namespace
    */
   static extractPrefixes(content) {
     if (!content || typeof content !== 'string') {
@@ -144,19 +175,42 @@ export class URIUtils {
   }
 
   /**
-   * Get a label for display from a URI
-   * @param {string} uri - The URI
-   * @param {Object} prefixes - The prefix mappings
-   * @param {number} maxLength - Maximum label length
-   * @returns {string} - The label
+   * Get a display label for a URI
+   * 
+   * @param {string|Object} uri - URI string or RDFJS term
+   * @param {Object} prefixes - Prefix mappings
+   * @param {number} maxLength - Maximum length for the label
+   * @returns {string} The display label
    */
   static getLabel(uri, prefixes, maxLength = 30) {
+    // Handle RDFJS term objects
+    if (uri && typeof uri === 'object') {
+      // If it's a Literal, format it appropriately
+      if (uri.termType === 'Literal') {
+        const value = uri.value || ''
+        // For shorter literals, just return the value
+        if (value.length <= maxLength || maxLength === 0) {
+          return `"${value}"${uri.language ? `@${uri.language}` : ''}`
+        }
+        // For longer literals, truncate
+        return `"${value.substring(0, maxLength - 3)}..."${uri.language ? `@${uri.language}` : ''}`
+      }
+
+      // For other term types, extract the value
+      if (uri.value) {
+        uri = uri.value
+      }
+    }
+
     if (!uri || typeof uri !== 'string') {
       return ''
     }
 
     // For literals, just return them
     if (this.isLiteral(uri)) {
+      if (maxLength > 0 && uri.length > maxLength) {
+        return `${uri.substring(0, maxLength - 3)}...`
+      }
       return uri
     }
 
@@ -169,7 +223,7 @@ export class URIUtils {
       return parts.name || uri
     }
 
-    // Trim if too long
+    // Truncate if too long
     if (maxLength > 0 && shortened.length > maxLength) {
       return `${shortened.substring(0, maxLength - 3)}...`
     }

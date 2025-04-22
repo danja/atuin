@@ -7,6 +7,7 @@
     "ignore": {
         "useDefaultPatterns": true,
         "customPatterns": [
+            "old",
             "dist",
             "js/lib",
             "docs",

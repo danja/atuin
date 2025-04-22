@@ -1,53 +1,69 @@
-/**
- * RDF Parser for Turtle documents
- * @module core/Parser
- */
+import ParserN3 from '@rdfjs/parser-n3'
+import rdf from 'rdf-ext'
+import namespace from '@rdfjs/namespace'
+import { Readable } from 'readable-stream'
+import { stringToStream } from '../utils/StreamUtils.js'
 
-import * as N3 from 'n3'
-
 /**
- * Handles parsing of RDF Turtle syntax
+ * RDF Parser class that handles parsing Turtle/N3 content using RDFJS compatible interfaces
  */
 export class RDFParser {
   /**
-   * Create a new RDFParser
-   * @param {Object} logger - Logger service
+   * Creates a new RDF Parser instance
+   * 
+   * @param {Object} logger - Logger service for recording errors and debug information
    */
   constructor(logger) {
     this.logger = logger
+    this.parser = new ParserN3({ factory: rdf })
   }
 
   /**
-   * Parse Turtle content
-   * @param {string} content - The content to parse
-   * @param {Object} handlers - Callback handlers
-   * @param {Function} handlers.onError - Called on parsing error
-   * @param {Function} handlers.onTriple - Called for each triple
-   * @param {Function} handlers.onComplete - Called when parsing completes
+   * Parse RDF content with callbacks for various events
+   * 
+   * @param {string} content - The RDF content to parse (Turtle/N3 format)
+   * @param {Object} handlers - Callback handlers for different events
+   * @param {Function} [handlers.onError] - Called when an error occurs
+   * @param {Function} [handlers.onTriple] - Called for each triple
+   * @param {Function} [handlers.onComplete] - Called when parsing is complete
    */
   parse(content, handlers = {}) {
-    const parser = new N3.Parser()
-    const store = new N3.Store()
-
     try {
-      parser.parse(content, (error, triple, prefixes) => {
-        if (error) {
-          if (handlers.onError) {
-            handlers.onError(this._formatError(error))
-          }
-          return
+      // Create a readable stream from the content using our StreamUtils
+      const textStream = stringToStream(content)
+      const quadStream = this.parser.import(textStream)
+      const triples = []
+      let prefixes = {}
+
+      // Process the quad stream
+      quadStream.on('data', (quad) => {
+        if (handlers.onTriple) {
+          handlers.onTriple(quad)
         }
+        triples.push(quad)
+      })
 
-        if (triple) {
-          if (handlers.onTriple) {
-            handlers.onTriple(triple)
-          }
+      quadStream.on('prefix', (prefix, namespace) => {
+        prefixes[prefix] = namespace
+      })
 
-          store.addQuad(triple)
-        } else {
-          // End of document
+      quadStream.on('error', (error) => {
+        if (handlers.onError) {
+          handlers.onError(this._formatError(error))
+        }
+      })
+
+      quadStream.on('end', () => {
+        // Extract prefixes from the parser and create a store
+        try {
+          const store = rdf.dataset(triples)
+
           if (handlers.onComplete) {
             handlers.onComplete(prefixes, store)
+          }
+        } catch (error) {
+          if (handlers.onError) {
+            handlers.onError(this._formatError(error))
           }
         }
       })
@@ -59,13 +75,13 @@ export class RDFParser {
   }
 
   /**
-   * Format an error for display
+   * Format error object to include line and column information
+   * 
    * @private
-   * @param {Error} error - The error to format
-   * @returns {Object} - Formatted error
+   * @param {Error} error - The error object
+   * @returns {Object} Formatted error with message, line, and column
    */
   _formatError(error) {
-    // Extract line number from error message
     let line = 1
     let column = 0
 
@@ -87,9 +103,10 @@ export class RDFParser {
   }
 
   /**
-   * Parse Turtle content and return all triples
-   * @param {string} content - The content to parse
-   * @returns {Promise<Object>} - Object with triples and prefixes
+   * Parse triples from content and return a promise
+   * 
+   * @param {string} content - The RDF content to parse
+   * @returns {Promise<Object>} A promise that resolves to an object containing triples and prefixes
    */
   parseTriples(content) {
     return new Promise((resolve, reject) => {
@@ -112,9 +129,10 @@ export class RDFParser {
   }
 
   /**
-   * Check if content is valid Turtle
-   * @param {string} content - The content to check
-   * @returns {Promise<boolean>} - True if valid
+   * Check if the content is valid RDF
+   * 
+   * @param {string} content - The RDF content to validate
+   * @returns {Promise<boolean>} A promise that resolves to true if valid, false otherwise
    */
   async isValid(content) {
     try {

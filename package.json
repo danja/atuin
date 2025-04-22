@@ -6,9 +6,9 @@
   "scripts": {
     "build": "webpack --mode production",
     "dev": "webpack serve --mode development",
-    "test": "jasmine",
+    "test": "jasmine --config=jasmine.json",
     "docs": "jsdoc -c jsdoc.json",
-       "rp": "repomix -c repomix.config.json ."
+    "rp": "repomix -c repomix.config.json ."
   },
   "keywords": [
     "rdf",
@@ -22,7 +22,12 @@
   "dependencies": {
     "@codemirror/state": "^6.4.0",
     "@codemirror/view": "^6.24.0",
+    "@rdfjs/data-model": "^2.0.1",
+    "@rdfjs/namespace": "^2.0.0",
+    "@rdfjs/parser-n3": "^2.0.1",
     "n3": "^1.17.2",
+    "rdf-ext": "^2.2.0",
+    "string-to-stream": "^3.0.1",
     "vis-data": "^7.1.9",
     "vis-network": "^9.1.6"
   },

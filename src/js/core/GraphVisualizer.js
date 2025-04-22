@@ -1,22 +1,17 @@
-/**
- * Graph visualization for RDF triples
- * @module core/GraphVisualizer
- */
-
-// Import vis-network differently
 import { Network } from 'vis-network/standalone/esm/vis-network.js'
 import { DataSet } from 'vis-data/standalone/esm/vis-data.js'
 import { RDFParser } from './Parser.js'
 import { URIUtils } from '../utils/URIUtils.js'
 
 /**
- * Creates and manages a graph visualization for RDF triples
+ * Graph visualization component for RDF data
  */
 export class GraphVisualizer {
   /**
-   * Create a new GraphVisualizer
-   * @param {HTMLElement} container - The container element
-   * @param {Object} logger - Logger service
+   * Creates a new GraphVisualizer instance
+   * 
+   * @param {HTMLElement} container - The DOM element to contain the graph
+   * @param {Object} logger - The logger service
    */
   constructor(container, logger) {
     this.container = container
@@ -32,8 +27,8 @@ export class GraphVisualizer {
     this.options = {
       defaultPrefixes: ['rdf', 'rdfs', 'owl'],
       labelMaxLength: 15,
-      hidden: true,  // Whether to hide default vocabulary nodes
-      freeze: false  // Whether to freeze the physics
+      hidden: true,
+      freeze: false
     }
 
     this.clusterIndex = 0
@@ -45,23 +40,22 @@ export class GraphVisualizer {
   }
 
   /**
-   * Initialize the visualizer
+   * Initialize the graph visualization
    */
   initialize() {
-    // Create empty graph
+    // Create network data structure
     const data = {
       nodes: this.nodes,
       edges: this.edges
     }
 
-    // Set up network options
+    // Network configuration
     const options = {
       layout: {
         randomSeed: undefined,
         improvedLayout: true,
         clusterThreshold: 150,
         hierarchical: {
-          // when set, physics is hierarchical repulsion solver
           enabled: false,
           levelSeparation: 150,
           nodeSpacing: 100,
@@ -69,9 +63,9 @@ export class GraphVisualizer {
           blockShifting: true,
           edgeMinimization: true,
           parentCentralization: true,
-          direction: 'UD',        // UD, DU, LR, RL
-          sortMethod: 'hubsize',  // hubsize, directed
-          shakeTowards: 'leaves'  // roots, leaves
+          direction: 'UD',
+          sortMethod: 'hubsize',
+          shakeTowards: 'leaves'
         }
       },
       physics: {
@@ -142,18 +136,19 @@ export class GraphVisualizer {
       }
     }
 
-    // Create network
+    // Create the network
     this.network = new Network(this.container, data, options)
 
-    // Set up event listeners
+    // Register event handler
     this.network.on('click', this._handleNetworkClick.bind(this))
 
     this.logger.debug('Graph visualizer initialized')
   }
 
   /**
-   * Update the graph with new content
-   * @param {string} content - Turtle content
+   * Update the graph with new RDF content
+   * 
+   * @param {string} content - The RDF content in Turtle format
    */
   async updateGraph(content) {
     try {
@@ -167,10 +162,10 @@ export class GraphVisualizer {
       this.clusters = []
       this.clusterLevel = 0
 
-      // Update visualization
+      // Create visualization from triples
       this._createVisualization()
 
-      // Apply hide/show defaults
+      // Apply hide defaults if enabled
       if (this.options.hidden) {
         this._toggleHideDefaults()
       }
@@ -180,30 +175,32 @@ export class GraphVisualizer {
   }
 
   /**
-   * Create the graph visualization
+   * Create graph visualization from triples
+   * 
    * @private
    */
   _createVisualization() {
-    // Clear existing data
+    // Clear existing nodes and edges
     this.nodes.clear()
     this.edges.clear()
 
-    // Process each triple
+    // Process each triple to create nodes and edges
     for (const triple of this.triples) {
       const subject = triple.subject.value || triple.subject
       const predicate = triple.predicate.value || triple.predicate
       const object = triple.object.value || triple.object
 
-      // Add nodes if they don't exist
+      // Add subject node if it doesn't exist
       if (!this.nodes.get(subject)) {
         this.nodes.add(this._createNode(subject, 'subject'))
       }
 
+      // Add object node if it doesn't exist
       if (!this.nodes.get(object)) {
         this.nodes.add(this._createNode(object, 'object'))
       }
 
-      // Add edge
+      // Add edge from subject to object
       this.edges.add({
         from: subject,
         to: object,
@@ -214,7 +211,7 @@ export class GraphVisualizer {
       })
     }
 
-    // Auto-cluster if many nodes
+    // Auto-cluster large graphs
     if (this.triples.length > 500) {
       this._makeClusters()
     }
@@ -225,11 +222,12 @@ export class GraphVisualizer {
   }
 
   /**
-   * Create a node for visualization
+   * Create a node object for visualization
+   * 
    * @private
-   * @param {string} id - Node ID
-   * @param {string} type - Node type (subject, object)
-   * @returns {Object} - Node object
+   * @param {string} id - The node ID
+   * @param {string} type - The node type (subject/object)
+   * @returns {Object} The node object
    */
   _createNode(id, type) {
     const label = URIUtils.getLabel(id, this.prefixes, this.options.labelMaxLength)
@@ -239,13 +237,13 @@ export class GraphVisualizer {
       type
     }
 
-    // For longer labels, add title
+    // Add tooltip for long labels
     if (label.length > this.options.labelMaxLength || label.endsWith('...')) {
       const fullLabel = URIUtils.getLabel(id, this.prefixes, 0)
       node.title = fullLabel
     }
 
-    // Style literals differently
+    // Style based on node type
     if (URIUtils.isLiteral(id)) {
       node.shape = 'box'
       node.shapeProperties = { borderDashes: [5, 5] }
@@ -273,35 +271,37 @@ export class GraphVisualizer {
 
   /**
    * Handle network click events
+   * 
    * @private
-   * @param {Object} params - Click parameters
+   * @param {Object} params - Event parameters from vis.js
    */
   _handleNetworkClick(params) {
     if (params.nodes.length === 1) {
       const nodeId = params.nodes[0]
 
-      // Check if it's a cluster
+      // Check if clicked on cluster
       if (this.network.isCluster(nodeId)) {
-        // Open the cluster
+        // Open cluster
         this.network.openCluster(nodeId)
 
-        // Remove from clusters list
+        // Remove from clusters array
         const index = this.clusters.findIndex(c => c.id === nodeId)
         if (index !== -1) {
           this.clusters.splice(index, 1)
         }
       } else {
-        // Notify subscribers about node selection
+        // Notify selection
         this._notifyNodeSelection(nodeId)
       }
     } else {
-      // Notify with null to clear highlights
+      // Clear selection
       this._notifyNodeSelection(null)
     }
   }
 
   /**
-   * Notify node selection listeners
+   * Notify registered callbacks about node selection
+   * 
    * @private
    * @param {string|null} nodeId - The selected node ID or null
    */
@@ -310,7 +310,8 @@ export class GraphVisualizer {
   }
 
   /**
-   * Create node clusters
+   * Create clusters from graph nodes
+   * 
    * @private
    */
   _makeClusters() {
@@ -320,13 +321,13 @@ export class GraphVisualizer {
       processProperties: (clusterOptions, childNodes) => {
         this.clusterIndex++
 
-        // Count total children (including nested)
+        // Count total child nodes including nested ones
         let childrenCount = 0
         for (const node of childNodes) {
           childrenCount += node.childrenCount || 1
         }
 
-        // Find a subject node for naming
+        // Try to find a good name for the cluster
         let subjectNode = null
         for (const node of childNodes) {
           const connectedNodes = this.network.getConnectedNodes(node.id)
@@ -349,7 +350,7 @@ export class GraphVisualizer {
         clusterOptions.id = clusterId
         clusterOptions.mass = 0.5 * childrenCount
 
-        // Store cluster info
+        // Remember this cluster
         this.clusters.push({
           id: clusterId,
           label: clusterLabel,
@@ -374,24 +375,25 @@ export class GraphVisualizer {
 
     this.network.clusterOutliers(clusterOptions)
 
-    // Update stored cluster level
+    // Update cluster level
     if (this.clusters.length > 0) {
       this.clusterLevel = this.clusters[this.clusters.length - 1].clusterLevel
     }
   }
 
   /**
-   * Get a label for a cluster
+   * Get a label for a cluster based on a node
+   * 
    * @private
-   * @param {Object} node - Node object
-   * @returns {string} - Cluster label
+   * @param {Object} node - The node object
+   * @returns {string} The cluster label
    */
   _getClusterLabel(node) {
     const label = node.title != null ? node.title : node.label
 
     if (!label) return 'Cluster'
 
-    // Truncate at newline if present
+    // If there's a newline, only take the first line
     const newlineIndex = label.indexOf('\n')
     if (newlineIndex !== -1) {
       return label.substring(0, newlineIndex)
@@ -401,7 +403,8 @@ export class GraphVisualizer {
   }
 
   /**
-   * Open clusters
+   * Open clusters recursively
+   * 
    * @private
    */
   _openClusters() {
@@ -428,11 +431,12 @@ export class GraphVisualizer {
   }
 
   /**
-   * Toggle showing/hiding default vocabulary nodes
+   * Toggle visibility of default vocabulary nodes
+   * 
    * @private
    */
   _toggleHideDefaults() {
-    // Store current cluster level
+    // Remember current cluster level
     const currentLevel = this.clusterLevel
 
     // Open all clusters first
@@ -440,7 +444,7 @@ export class GraphVisualizer {
       this._openClusters()
     }
 
-    // Toggle visibility based on prefix
+    // Toggle visibility of nodes based on prefix
     this.nodes.forEach(node => {
       const shortened = URIUtils.shrinkUri(node.id, this.prefixes)
       const prefixPart = shortened.split(':')[0]
@@ -462,10 +466,10 @@ export class GraphVisualizer {
       }
     })
 
-    // Redraw
+    // Force network update
     this.network.body.emitter.emit('_dataChanged')
 
-    // Restore clusters
+    // Recreate clusters
     this.clusterLevel = 0
     for (let i = 0; i < currentLevel; i++) {
       this._makeClusters()
@@ -473,7 +477,7 @@ export class GraphVisualizer {
   }
 
   /**
-   * Toggle physics freeze
+   * Toggle physics simulation freeze state
    */
   toggleFreeze() {
     this.options.freeze = !this.options.freeze
@@ -484,7 +488,7 @@ export class GraphVisualizer {
   }
 
   /**
-   * Toggle hiding default nodes
+   * Toggle visibility of default vocabulary nodes
    */
   toggleHideDefaults() {
     this.options.hidden = !this.options.hidden
@@ -492,30 +496,32 @@ export class GraphVisualizer {
   }
 
   /**
-   * Make clusters
+   * Create a new cluster level
    */
   makeClusters() {
     this._makeClusters()
   }
 
   /**
-   * Open clusters
+   * Open one level of clusters
    */
   openClusters() {
     this._openClusters()
   }
 
   /**
-   * Register a node selection listener
-   * @param {Function} callback - The callback function
+   * Register callback for node selection events
+   * 
+   * @param {Function} callback - Function to call when node is selected
    */
   onNodeSelect(callback) {
     this.nodeSelectCallbacks.push(callback)
   }
 
   /**
-   * Remove a node selection listener
-   * @param {Function} callback - The callback to remove
+   * Unregister callback for node selection events
+   * 
+   * @param {Function} callback - Function to remove from callbacks
    */
   offNodeSelect(callback) {
     const index = this.nodeSelectCallbacks.indexOf(callback)
@@ -525,16 +531,18 @@ export class GraphVisualizer {
   }
 
   /**
-   * Get all nodes
-   * @returns {Array} - Array of nodes
+   * Get all nodes in the graph
+   * 
+   * @returns {Array} Array of node objects
    */
   getNodes() {
     return this.nodes.get()
   }
 
   /**
-   * Get all edges
-   * @returns {Array} - Array of edges
+   * Get all edges in the graph
+   * 
+   * @returns {Array} Array of edge objects
    */
   getEdges() {
     return this.edges.get()
