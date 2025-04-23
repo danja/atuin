@@ -1,11 +1,11 @@
 A little work is needed around the GraphVisualizer. It's currently inconsistent and rather ugly.
+We will do it in small steps, starting with : property labels and literals should be in rounded rectangles
 
-- property labels and literals should be in rounded rectangles
 - colors in the visualizer should echo those in the syntax highlighting, except
 - nodes corresponding to rdf classes, properties should have orange, yellow backgrounds
-- properties in the visualizer should be shown in their prefixed form
+- properties and objects in the visualizer should be shown in their prefixed form
 
-Other suggestions welcome.
+see attached image. Reread the above. Rounded rectangles, prefixed form. Double-check before giving me the artifacts, the recent attempts have been making things worse.
 
 ---
 

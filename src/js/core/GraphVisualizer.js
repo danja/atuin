@@ -4,12 +4,6 @@ import { RDFParser } from './Parser.js'
 import { URIUtils } from '../utils/URIUtils.js'
 
 export class GraphVisualizer {
-  /**
-   * Create a graph visualizer
-   * 
-   * @param {HTMLElement} container - The DOM element to render the graph in
-   * @param {LoggerService} logger - Logger service
-   */
   constructor(container, logger) {
     this.container = container
     this.logger = logger
@@ -28,7 +22,7 @@ export class GraphVisualizer {
       freeze: false
     }
 
-    // Colors for different node types 
+    // Define consistent colors for different node types
     this.colors = {
       subject: {
         background: '#97B0F8',
@@ -88,17 +82,12 @@ export class GraphVisualizer {
     this.triples = []
   }
 
-  /**
-   * Initialize the graph visualizer
-   */
   initialize() {
-    // Create data structure
     const data = {
       nodes: this.nodes,
       edges: this.edges
     }
 
-    // Network visualization options
     const options = {
       layout: {
         randomSeed: undefined,
@@ -182,7 +171,7 @@ export class GraphVisualizer {
         selectionWidth: 2.5
       },
       nodes: {
-        shape: 'dot',
+        shape: 'ellipse',
         size: 10,
         font: {
           size: 12,
@@ -194,63 +183,54 @@ export class GraphVisualizer {
           enabled: false
         }
       },
-      interaction: {
-        hover: true,
-        tooltipDelay: 200,
-        zoomView: true,
-        dragView: true,
-        hoverConnectedEdges: true,
-        selectConnectedEdges: true
-      },
       groups: {
         subject: {
+          shape: 'ellipse',
           color: this.colors.subject
         },
         object: {
+          shape: 'ellipse',
           color: this.colors.object
         },
         literal: {
+          shape: 'box',
+          borderRadius: 8,
           color: this.colors.literal
         },
         class: {
+          shape: 'box',
+          borderRadius: 8,
           color: this.colors.class
         },
         property: {
+          shape: 'box',
+          borderRadius: 8,
           color: this.colors.property
         }
       }
     }
 
-    // Create network
     this.network = new Network(this.container, data, options)
 
-    // Handle click events
     this.network.on('click', this._handleNetworkClick.bind(this))
 
     this.logger.debug('Graph visualizer initialized')
   }
 
-  /**
-   * Update the graph visualization based on parsed triples
-   * 
-   * @param {string} content - Turtle RDF content
-   */
   async updateGraph(content) {
     try {
       const { triples, prefixes } = await this.parser.parseTriples(content)
 
+      // Store prefixes for label generation
       this.prefixes = prefixes || {}
       this.triples = triples
 
-      // Reset cluster state
       this.clusterIndex = 0
       this.clusters = []
       this.clusterLevel = 0
 
-      // Create visualization from updated data
       this._createVisualization()
 
-      // Apply hide defaults if enabled
       if (this.options.hidden) {
         this._toggleHideDefaults()
       }
@@ -259,25 +239,20 @@ export class GraphVisualizer {
     }
   }
 
-  /**
-   * Create the visualization from the current triples
-   */
   _createVisualization() {
-    // Clear existing nodes and edges
     this.nodes.clear()
     this.edges.clear()
 
-    // Build lookup tables for quick type detection
     const classes = new Set()
     const properties = new Set()
 
-    // First pass: identify RDF classes and properties
+    // First pass: identify classes and properties
     for (const triple of this.triples) {
       const subject = triple.subject.value || triple.subject
       const predicate = triple.predicate.value || triple.predicate
       const object = triple.object.value || triple.object
 
-      // Check for rdf:type triples to identify classes
+      // Check for class and property type declarations
       if (predicate === 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type') {
         if (object === 'http://www.w3.org/1999/02/22-rdf-syntax-ns#Property' ||
           object === 'http://www.w3.org/2000/01/rdf-schema#Property' ||
@@ -321,35 +296,11 @@ export class GraphVisualizer {
         this.nodes.add(this._createNode(object, nodeType))
       }
 
-      // Create edge between subject and object
-      const prefixedPredicate = URIUtils.shrinkUri(predicate, this.prefixes)
-
-      this.edges.add({
-        from: subject,
-        to: object,
-        label: prefixedPredicate || URIUtils.getLabel(predicate, this.prefixes),
-        type: 'predicate',
-        arrows: 'to',
-        predicateUri: predicate,
-        font: {
-          size: 10,
-          align: 'middle',
-          multi: 'false',
-          face: 'sans-serif'
-        },
-        color: {
-          color: '#0077aa',
-          highlight: '#0099cc',
-          hover: '#0088bb'
-        },
-        smooth: {
-          type: 'continuous',
-          roundness: 0.2
-        }
-      })
+      // Create edge with proper label
+      this._createEdge(subject, predicate, object)
     }
 
-    // Add clustering for large graphs
+    // Automatic clustering for large graphs
     if (this.triples.length > 500) {
       this._makeClusters()
     }
@@ -359,52 +310,90 @@ export class GraphVisualizer {
     }
   }
 
-  /**
-   * Create a node for the visualization
-   * 
-   * @param {string} id - Node identifier
-   * @param {string} type - Node type (subject, object, literal, class, property)
-   * @returns {object} - Node object for vis-network
-   */
   _createNode(id, type) {
-    const label = URIUtils.getLabel(id, this.prefixes, this.options.labelMaxLength)
+    // Get the prefixed form when possible
+    let label = URIUtils.isLiteral(id) ? id : URIUtils.shrinkUri(id, this.prefixes)
+
+    // If no prefix match, try to get the local name
+    if (label === id && !URIUtils.isLiteral(id)) {
+      const parts = URIUtils.splitNamespace(id)
+      label = parts.name || label
+    }
+
+    // For literals, truncate if too long
+    if (URIUtils.isLiteral(id) && label.length > this.options.labelMaxLength) {
+      label = label.substring(0, this.options.labelMaxLength - 3) + '...'
+    }
+
     const node = {
       id,
       label,
       group: type,
-      title: label.length > this.options.labelMaxLength || label.endsWith('...')
-        ? URIUtils.getLabel(id, this.prefixes, 0) : undefined
+      title: id  // Full URI on hover
     }
 
-    // Apply specific styling based on node type
-    if (URIUtils.isLiteral(id)) {
+    // Style nodes based on type
+    if (type === 'literal') {
       node.shape = 'box'
-      node.borderRadius = 8 // Rounded corners for literals
+      node.borderRadius = 8
       node.font = { color: '#a31515' }
       node.widthConstraint = { minimum: 50, maximum: 200 }
     } else if (type === 'property') {
-      node.shape = 'ellipse'
-      node.font = { color: '#0077aa', strokeWidth: 0, bold: true }
+      node.shape = 'box'
+      node.borderRadius = 8
+      node.font = { color: '#0077aa', bold: true }
     } else if (type === 'class') {
-      node.shape = 'diamond'
-      node.size = 12
+      node.shape = 'box'
+      node.borderRadius = 8
       node.font = { color: '#aa6600', bold: true }
-    } else if (type === 'subject') {
-      // Keep default dot shape for subjects
-      node.size = 10
-    } else {
-      // Default styling for object nodes
-      node.size = 8
     }
 
     return node
   }
 
-  /**
-   * Handle network click events
-   * 
-   * @param {object} params - Click event parameters
-   */
+  _createEdge(subject, predicate, object) {
+    let edgeLabel = ''
+
+    // Special case for rdf:type - display as "a" like in Turtle
+    if (predicate === 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type') {
+      edgeLabel = 'a'
+    } else {
+      // Try to get prefixed form
+      edgeLabel = URIUtils.shrinkUri(predicate, this.prefixes)
+
+      // If that fails, use local name
+      if (edgeLabel === predicate) {
+        const parts = URIUtils.splitNamespace(predicate)
+        edgeLabel = parts.name || edgeLabel
+      }
+    }
+
+    this.edges.add({
+      from: subject,
+      to: object,
+      label: edgeLabel,
+      title: predicate, // Full URI on hover
+      type: 'predicate',
+      arrows: 'to',
+      predicateUri: predicate,
+      font: {
+        size: 10,
+        align: 'middle',
+        face: 'sans-serif',
+        multi: 'false'
+      },
+      color: {
+        color: '#0077aa',
+        highlight: '#0099cc',
+        hover: '#0088bb'
+      },
+      smooth: {
+        type: 'continuous',
+        roundness: 0.2
+      }
+    })
+  }
+
   _handleNetworkClick(params) {
     if (params.nodes.length === 1) {
       const nodeId = params.nodes[0]
@@ -414,7 +403,7 @@ export class GraphVisualizer {
         // Open the cluster
         this.network.openCluster(nodeId)
 
-        // Remove from clusters list
+        // Remove from our clusters list
         const index = this.clusters.findIndex(c => c.id === nodeId)
         if (index !== -1) {
           this.clusters.splice(index, 1)
@@ -424,23 +413,15 @@ export class GraphVisualizer {
         this._notifyNodeSelection(nodeId)
       }
     } else {
-      // Deselect any selected node
+      // No nodes selected - clear selection
       this._notifyNodeSelection(null)
     }
   }
 
-  /**
-   * Notify all registered callbacks about node selection
-   * 
-   * @param {string|null} nodeId - Selected node ID or null if deselected
-   */
   _notifyNodeSelection(nodeId) {
     this.nodeSelectCallbacks.forEach(callback => callback(nodeId))
   }
 
-  /**
-   * Create clusters in the graph
-   */
   _makeClusters() {
     this.clusterLevel++
 
@@ -454,7 +435,7 @@ export class GraphVisualizer {
           childrenCount += node.childrenCount || 1
         }
 
-        // Try to find a suitable subject node for the cluster label
+        // Try to find a good label for the cluster based on connected nodes
         let subjectNode = null
         for (const node of childNodes) {
           const connectedNodes = this.network.getConnectedNodes(node.id)
@@ -478,7 +459,7 @@ export class GraphVisualizer {
         clusterOptions.mass = 0.5 * childrenCount
         clusterOptions.color = this.colors.cluster
 
-        // Store cluster for later reference
+        // Track this cluster
         this.clusters.push({
           id: clusterId,
           label: clusterLabel,
@@ -502,24 +483,18 @@ export class GraphVisualizer {
 
     this.network.clusterOutliers(clusterOptions)
 
-    // Update cluster level
+    // Update current level after clustering
     if (this.clusters.length > 0) {
       this.clusterLevel = this.clusters[this.clusters.length - 1].clusterLevel
     }
   }
 
-  /**
-   * Get a readable label for a cluster
-   * 
-   * @param {object} node - Node object
-   * @returns {string} Cluster label
-   */
   _getClusterLabel(node) {
     const label = node.title != null ? node.title : node.label
 
     if (!label) return 'Cluster'
 
-    // Extract first line if label has multiple lines
+    // If label has a newline, take only the first line
     const newlineIndex = label.indexOf('\n')
     if (newlineIndex !== -1) {
       return label.substring(0, newlineIndex)
@@ -528,9 +503,6 @@ export class GraphVisualizer {
     return label
   }
 
-  /**
-   * Open clusters at the current level
-   */
   _openClusters() {
     let declustered = false
     const newClusters = []
@@ -554,19 +526,16 @@ export class GraphVisualizer {
     }
   }
 
-  /**
-   * Toggle visibility of default vocabulary nodes (RDF, RDFS, OWL)
-   */
   _toggleHideDefaults() {
-    // Store current cluster level
+    // Remember current level
     const currentLevel = this.clusterLevel
 
-    // Open all clusters before modifying nodes
+    // Open all clusters to modify individual nodes
     while (this.clusterLevel > 0) {
       this._openClusters()
     }
 
-    // Toggle visibility of default vocabulary nodes
+    // Toggle visibility for standard vocabulary nodes
     this.nodes.forEach(node => {
       const shortened = URIUtils.shrinkUri(node.id, this.prefixes)
       const prefixPart = shortened.split(':')[0]
@@ -588,19 +557,16 @@ export class GraphVisualizer {
       }
     })
 
-    // Force refresh
+    // Notify network data has changed
     this.network.body.emitter.emit('_dataChanged')
 
-    // Restore clustering
+    // Recreate clusters as needed
     this.clusterLevel = 0
     for (let i = 0; i < currentLevel; i++) {
       this._makeClusters()
     }
   }
 
-  /**
-   * Toggle freeze/unfreeze of the graph physics
-   */
   toggleFreeze() {
     this.options.freeze = !this.options.freeze
 
@@ -609,42 +575,23 @@ export class GraphVisualizer {
     this.network.startSimulation()
   }
 
-  /**
-   * Toggle visibility of default vocabulary nodes
-   */
   toggleHideDefaults() {
     this.options.hidden = !this.options.hidden
     this._toggleHideDefaults()
   }
 
-  /**
-   * Create a new cluster level
-   */
   makeClusters() {
     this._makeClusters()
   }
 
-  /**
-   * Open clusters at the current level
-   */
   openClusters() {
     this._openClusters()
   }
 
-  /**
-   * Register a callback for node selection events
-   * 
-   * @param {Function} callback - Function to call when a node is selected
-   */
   onNodeSelect(callback) {
     this.nodeSelectCallbacks.push(callback)
   }
 
-  /**
-   * Unregister a callback for node selection events
-   * 
-   * @param {Function} callback - Function to remove from callbacks
-   */
   offNodeSelect(callback) {
     const index = this.nodeSelectCallbacks.indexOf(callback)
     if (index !== -1) {
@@ -652,20 +599,10 @@ export class GraphVisualizer {
     }
   }
 
-  /**
-   * Get all nodes in the graph
-   * 
-   * @returns {Array} Array of node objects
-   */
   getNodes() {
     return this.nodes.get()
   }
 
-  /**
-   * Get all edges in the graph
-   * 
-   * @returns {Array} Array of edge objects
-   */
   getEdges() {
     return this.edges.get()
   }

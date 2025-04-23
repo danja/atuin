@@ -33,7 +33,6 @@
 .vis-node.literal {
   background-color: #fff6a5;
   border-color: #ffcc00;
-  border-style: dashed;
   border-radius: 8px;
 }
 
@@ -41,12 +40,14 @@
 .vis-node.class {
   background-color: #ffb366;
   border-color: #ff8000;
+  border-radius: 8px;
 }
 
 /* Property nodes */
 .vis-node.property {
   background-color: #ffff99;
   border-color: #e6e600;
+  border-radius: 8px;
 }
 
 /* Selected node highlight */
@@ -73,6 +74,8 @@
   background-color: rgba(255, 255, 255, 0.85);
   padding: 2px 4px;
   border-radius: 4px;
+  color: #0077aa;
+  font-weight: bold;
 }
 
 /* Cluster styling */
@@ -128,18 +131,6 @@
 .vis-node:hover {
   cursor: pointer;
   box-shadow: 0 0 6px rgba(0, 0, 0, 0.2);
-}
-
-/* Manipulator tool */
-.vis-manipulation {
-  border: 1px solid #d0d0d0;
-  background-color: white;
-  border-radius: 4px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.vis-manipulation button {
-  border-radius: 3px;
 }
 
 /* Loading animation */
