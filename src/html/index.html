@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,6 +9,7 @@
   <link rel="stylesheet" href="css/editor.css">
   <link rel="stylesheet" href="css/graph.css">
 </head>
+
 <body>
   <header>
     <div class="logo">
@@ -67,13 +69,34 @@
       </div>
       <div id="divider" class="split-divider"></div>
       <div id="graph-container" class="split-pane">
-        <!-- Graph visualization will be rendered here -->
+
       </div>
     </div>
-    <div id="about"><strong><a href="about.html">About</a></strong></div>
+    <div id="about">
+      <div class="open-source-info">
+        <div class="left-info">
+          <strong><a href="about.html">About</a></strong>
+          <a href="https://opensource.org/licenses/MIT" target="_blank" title="MIT License">
+            <img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="MIT License" class="license-badge">
+          </a>
+          <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" title="Creative Commons Attribution">
+            <img src="https://img.shields.io/badge/Content-CC%20BY-lightgrey.svg" alt="CC BY" class="license-badge">
+          </a>
+          <a href="https://github.com/danja/atuin" target="_blank" title="GitHub Repository">
+            <img src="https://img.shields.io/badge/GitHub-Repository-black.svg?logo=github" alt="GitHub"
+              class="github-badge">
+
+        </div>
+        <div class="right-info">
+          <span><em>a <strong><a href="https://hyperdata.it" target="_blank">hyperdata.it</a></strong>
+              project</em></span>
+          <span><em>© <strong><a href="https://danny.ayers.name">Danny Ayers</a></strong> 2025</em></span>
+        </div>
+      </div>
+    </div>
   </div>
 
-  <!-- Graph node/edge edit popup -->
+
   <div id="network-popUp" class="popup" style="display: none">
     <div class="popup-content">
       <h3 id="operation">Edit</h3>
@@ -88,7 +111,7 @@
     </div>
   </div>
 
-  <!-- Confirmation dialog -->
+
   <div id="dialog" class="dialog" style="display: none">
     <div class="dialog-content">
       <p>Are you sure you want to delete this item?</p>
@@ -100,4 +123,5 @@
     </div>
   </div>
 </body>
+
 </html>

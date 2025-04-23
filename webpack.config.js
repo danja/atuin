@@ -26,12 +26,18 @@ export default {
   },
   plugins: [
     new HtmlWebpackPlugin({
-      template: './src/html/index.html'
+      template: './src/html/index.html',
+      filename: 'index.html'
     }),
     new CopyWebpackPlugin({
       patterns: [
         { from: 'src/css', to: 'css' },
-        { from: 'src/img', to: 'img' }
+        { from: 'src/img', to: 'img' },
+        {
+          from: 'src/html', to: '.', globOptions: {
+            ignore: ['**/index.html']  // Exclude index.html as it's handled by HtmlWebpackPlugin
+          }
+        }
       ]
     })
   ],
