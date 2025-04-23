@@ -117,6 +117,11 @@ export class URIUtils {
       return prefixed
     }
 
+    // Special case: 'a' shorthand for rdf:type
+    if (prefixed === 'a') {
+      return 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type'
+    }
+
     const colonPos = prefixed.indexOf(':')
     if (colonPos === -1) {
       return prefixed
@@ -124,10 +129,6 @@ export class URIUtils {
 
     const prefix = prefixed.substring(0, colonPos)
     const local = prefixed.substring(colonPos + 1)
-
-    if (prefix === 'a') {
-      return 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type'
-    }
 
     if (prefixes[prefix]) {
       return `${prefixes[prefix]}${local}`

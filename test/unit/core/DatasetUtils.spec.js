@@ -27,7 +27,7 @@ describe('DatasetUtils', () => {
       expect(dataset).toBeDefined()
       expect(dataset.size).toBe(1)
 
-      const quad = dataset.toArray()[0]
+      const quad = Array.from(dataset)[0]
       expect(quad.subject.value).toBe('http://example.org/subject')
       expect(quad.predicate.value).toBe('http://example.org/predicate')
       expect(quad.object.value).toBe('http://example.org/object')
@@ -142,7 +142,7 @@ describe('DatasetUtils', () => {
       expect(result.size).toBe(2)
 
       // Check that the right quads were matched
-      const quads = result.toArray()
+      const quads = Array.from(result)
       expect(quads.some(q =>
         q.predicate.value === 'http://example.org/predicate1' &&
         q.object.value === 'http://example.org/object1'
@@ -247,3 +247,4 @@ describe('DatasetUtils', () => {
       expect(dataset.has(quad2)).toBe(true)
     })
   })
+})

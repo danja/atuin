@@ -6,6 +6,7 @@ import { URIUtils } from '../utils/URIUtils.js'
 import { turtle } from './TurtleMode.js'
 import { syntaxErrorHighlighter, setSyntaxError } from './SyntaxErrorHighlighter.js'
 import { nodeHighlighter, setHighlightedNode } from './NodeHighlighter.js'
+import { eventBus, EVENTS } from '../../../../evb/src/index.js'
 
 /**
  * Editor component for RDF Turtle syntax with syntax highlighting
@@ -145,6 +146,9 @@ export class TurtleEditor {
    */
   _notifyChangeListeners() {
     const content = this.getValue()
+    // Notify via event bus instead of direct callbacks
+    eventBus.emit(EVENTS.MODEL_SYNCED, content)
+    // Optionally, keep callback support for legacy code:
     this.changeCallbacks.forEach(callback => callback(content))
   }
 
@@ -328,7 +332,7 @@ export class TurtleEditor {
     this.syntaxCheckState = newState
 
     // Dispatch event for UI to update
-    const event = new CustomEvent('syntax-check-state-change', {
+    const event = new (typeof window !== 'undefined' && window.CustomEvent ? window.CustomEvent : CustomEvent)('syntax-check-state-change', {
       detail: {
         state: newState,
         error: error

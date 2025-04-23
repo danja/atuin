@@ -175,7 +175,10 @@ export class DatasetUtils {
       }
     }
 
-    if (typeof graph === 'string' && graph !== null) {
+    // Use DefaultGraph if not provided
+    if (!graph) {
+      graph = rdf.defaultGraph()
+    } else if (typeof graph === 'string') {
       graph = rdf.namedNode(graph)
     }
 

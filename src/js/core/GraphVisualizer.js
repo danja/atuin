@@ -2,6 +2,7 @@ import { Network } from 'vis-network/standalone/esm/vis-network.js'
 import { DataSet } from 'vis-data/standalone/esm/vis-data.js'
 import { RDFParser } from './Parser.js'
 import { URIUtils } from '../utils/URIUtils.js'
+import { eventBus, EVENTS } from '../../../../evb/src/index.js'
 
 export class GraphVisualizer {
   constructor(container, logger) {
@@ -80,6 +81,11 @@ export class GraphVisualizer {
 
     this.prefixes = {}
     this.triples = []
+
+    // Listen for Turtle model sync events
+    eventBus.on(EVENTS.MODEL_SYNCED, (content) => {
+      this.updateGraph(content)
+    })
   }
 
   initialize() {

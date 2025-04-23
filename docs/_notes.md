@@ -1,3 +1,5 @@
+## Atuin has two views of an RDF model - Turtle text in codemirror and a graph visualizer. I'd like to refactor it to use evb as a lib to facilitate the communication between the two views so that later it can be extended more easily
+
 Please create a concise but comprehensive document artifact to aid in future plans. It will list the features then describe the architecture of the code. Points where refactoring may be desirable should be highlighted. Finally give a list of potential enhancements.
 
 There are still some unshortened uris
