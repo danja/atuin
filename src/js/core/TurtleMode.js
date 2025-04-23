@@ -8,8 +8,8 @@ export const turtleMode = StreamLanguage.define({
     prefix: t.keyword,
     base: t.keyword,
     prefixName: t.definition,
-    prefixDeclaration: t.special(t.variableName), // Using special(variableName) instead of number2
-    iri: t.string,
+    prefixDeclaration: t.special(t.variableName),
+    iri: t.special(t.string), // Changed to special string to give it the orange color
     a: t.atom,
     semicolon: t.operator,
     dot: t.operator,
@@ -24,8 +24,8 @@ export const turtleMode = StreamLanguage.define({
     datatype: t.labelName,
     lang: t.meta,
     error: t.invalid,
-    namespacePrefix: t.moduleKeyword, // Token for namespace prefixes like 'ex:'
-    localName: t.variableName, // Token for local names (the part after colon)
+    namespacePrefix: t.moduleKeyword,
+    localName: t.variableName,
   },
 
   startState: function () {
@@ -47,46 +47,46 @@ export const turtleMode = StreamLanguage.define({
   },
 
   token: function (stream, state) {
-    // Handle comments
+
     if (stream.peek() === '#') {
       stream.skipToEnd()
       return 'comment'
     }
 
-    // Handle line start
+
     if (stream.sol()) {
       if (state.lookingFor === 'object' && state.predicate !== null) {
-        // Continue with the current predicate-object pattern
+
       } else {
         state.lookingFor = 'subject'
       }
     }
 
-    // Skip whitespace
+
     if (stream.eatSpace()) return null
 
-    // Handle @prefix directive
+
     if (stream.match('@prefix', true, true)) {
       state.inPrefix = true
       state.prefixStart = true
       return 'prefix'
     }
 
-    // Handle @base directive
+
     if (stream.match('@base', true, true)) {
       state.inBase = true
       return 'base'
     }
 
-    // Handle prefix declaration
+
     if (state.inPrefix && state.prefixStart) {
       if (stream.match(/[a-zA-Z0-9_-]+:/, true) || stream.match(/:/, true)) {
         state.prefixStart = false
-        return 'prefixDeclaration' // Changed to a new token type for prefix declarations
+        return 'prefixDeclaration'
       }
     }
 
-    // Handle 'a' as predicate (rdf:type shorthand)
+
     if (stream.match(/a\b/, true)) {
       if (state.lookingFor === 'predicate') {
         state.predicate = true
@@ -95,7 +95,7 @@ export const turtleMode = StreamLanguage.define({
       return 'a'
     }
 
-    // Handle IRI with angle brackets
+
     if (stream.peek() === '<') {
       state.inIri = true
       stream.next()
@@ -130,13 +130,13 @@ export const turtleMode = StreamLanguage.define({
       }
     }
 
-    // Handle string literals
+
     if (stream.peek() === '"' || stream.peek() === "'") {
       state.stringDelimiter = stream.peek()
       state.inString = true
       stream.next()
 
-      // Check for triple quotes
+
       if (state.stringDelimiter === '"' &&
         stream.peek() === '"' &&
         stream.string.charAt(stream.pos + 1) === '"') {
@@ -153,7 +153,7 @@ export const turtleMode = StreamLanguage.define({
         state.stringDelimiter = "'''"
       }
 
-      // Process string content
+
       while (!stream.eol()) {
         if (state.inEscapeSequence) {
           stream.next()
@@ -167,7 +167,7 @@ export const turtleMode = StreamLanguage.define({
           continue
         }
 
-        // Check for closing quotes
+
         if (state.stringDelimiter === '"""') {
           if (stream.peek() === '"' &&
             stream.string.charAt(stream.pos + 1) === '"' &&
@@ -200,14 +200,14 @@ export const turtleMode = StreamLanguage.define({
         stream.next()
       }
 
-      // Handle language tag
+
       if (!state.inString && stream.peek() === '@') {
         stream.next()
         stream.eatWhile(/[a-zA-Z0-9-]/)
         return 'lang'
       }
 
-      // Handle datatype
+
       if (!state.inString && stream.peek() === '^' && stream.string.charAt(stream.pos + 1) === '^') {
         stream.next()
         stream.next()
@@ -222,26 +222,26 @@ export const turtleMode = StreamLanguage.define({
       return 'literal'
     }
 
-    // Handle prefixed names (ex:something) - THE KEY PART FOR PREFIX HIGHLIGHTING
+
     if (stream.match(/[a-zA-Z0-9_-]+:/, false)) {
-      // Look ahead for the prefix without consuming
+
       const prefix = stream.string.slice(stream.pos).match(/^[a-zA-Z0-9_-]+:/)[0]
 
-      // Consume just the prefix part
+
       stream.match(/[a-zA-Z0-9_-]+:/, true)
 
-      // Update state based on what we're looking for
+
       if (state.lookingFor === 'predicate') {
         state.predicate = true
         state.lookingFor = 'object'
-        return 'namespacePrefix' // Return immediately for the prefix
+        return 'namespacePrefix'
       }
 
-      // For subjects and objects, we still return the prefix token
+
       return 'namespacePrefix'
     }
 
-    // Handle the local name part after a prefix has been consumed
+
     if (stream.match(/[a-zA-Z0-9_\-.%]+/, true)) {
       if (state.lookingFor === 'subject') {
         state.subject = true
@@ -254,7 +254,7 @@ export const turtleMode = StreamLanguage.define({
       return 'localName'
     }
 
-    // Handle end of statement
+
     if (stream.peek() === '.') {
       stream.next()
       state.subject = null
@@ -264,7 +264,7 @@ export const turtleMode = StreamLanguage.define({
       return 'dot'
     }
 
-    // Handle semicolon (same subject, new predicate)
+
     if (stream.peek() === ';') {
       stream.next()
       state.predicate = null
@@ -273,7 +273,7 @@ export const turtleMode = StreamLanguage.define({
       return 'semicolon'
     }
 
-    // Handle comma (same subject and predicate, new object)
+
     if (stream.peek() === ',') {
       stream.next()
       state.object = null
@@ -281,7 +281,7 @@ export const turtleMode = StreamLanguage.define({
       return 'comma'
     }
 
-    // Handle blank nodes
+
     if (stream.match(/_:[a-zA-Z0-9_-]+/, true)) {
       if (state.lookingFor === 'subject') {
         state.subject = true
@@ -293,7 +293,7 @@ export const turtleMode = StreamLanguage.define({
       return 'type'
     }
 
-    // Handle numbers
+
     if (stream.match(/[+-]?[0-9]+(\.[0-9]*)?([eE][+-]?[0-9]+)?/, true)) {
       if (state.lookingFor === 'object') {
         state.object = true
@@ -302,7 +302,7 @@ export const turtleMode = StreamLanguage.define({
       return 'number'
     }
 
-    // Handle booleans
+
     if (stream.match(/true|false/, true)) {
       if (state.lookingFor === 'object') {
         state.object = true
@@ -311,12 +311,12 @@ export const turtleMode = StreamLanguage.define({
       return 'boolean'
     }
 
-    // Handle brackets
+
     if (stream.match(/[\[\]\(\)]/, true)) {
       return 'bracket'
     }
 
-    // Handle unknown tokens
+
     stream.next()
     return 'error'
   }

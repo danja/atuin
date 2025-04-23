@@ -1,3 +1,8 @@
+Please modify so that the namespace URI strings, eg. '<http://example.org/>' are different than other strings and colored FFA500.
+Take care to use a valid token tag in the Lezer highlighting system.
+
+---
+
 Now please change the prefixes in the namespace declarations to a light green. So with :
 
 ```

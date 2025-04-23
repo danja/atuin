@@ -13,7 +13,7 @@
   resize: none;
 }
 
-/* CodeMirror editor styles */
+
 .cm-editor {
   height: 100%;
   font-family: 'Fira Code', 'Courier New', Courier, monospace;
@@ -28,7 +28,7 @@
   background-color: #f7f7f7;
 }
 
-/* Error highlighting */
+
 .cm-error-line {
   background-color: var(--error-color);
 }
@@ -38,7 +38,7 @@
   font-weight: bold;
 }
 
-/* Turtle syntax highlighting */
+
 .cm-keyword {
   color: #708;
 }
@@ -73,6 +73,11 @@
   color: #a11;
 }
 
+.cm-iri {
+  color: #FFA500;
+  font-weight: bold;
+}
+
 .cm-meta {
   color: #555;
 }
@@ -97,7 +102,7 @@
   color: #00c;
 }
 
-/* Autocomplete tooltips */
+
 .cm-tooltip-autocomplete {
   border: 1px solid var(--border-color);
   background-color: white;
@@ -123,7 +128,7 @@
   background-color: #eee;
 }
 
-/* Node highlighting */
+
 .cm-highlight {
   background-color: var(--highlight-color);
   border-radius: 2px;
@@ -142,7 +147,7 @@
   width: 8px !important;
 }
 
-/* Turtle specific token styles */
+
 .cm-predicate {
   color: #0077aa;
   font-weight: bold;
@@ -158,7 +163,8 @@
 }
 
 .cm-iri {
-  color: #0066cc;
+  color: #FFA500;
+  font-weight: bold;
 }
 
 .cm-literal {
@@ -177,7 +183,7 @@
   color: #0000ff;
 }
 
-/* Highlighting animations */
+
 @keyframes highlight-pulse {
   0% { background-color: rgba(144, 238, 144, 0.3); }
   50% { background-color: rgba(144, 238, 144, 0.8); }

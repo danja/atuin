@@ -93,7 +93,10 @@ export class TurtleEditor {
       .cm-content .tok-typeName { color: #039be5; }
       .cm-content .tok-invalid { color: #c62828; text-decoration: wavy underline; }
       .cm-content .tok-bracket { color: #616161; }
-
+      
+      /* Override for namespace URIs */
+      .cm-iri, .cm-content .cm-iri { color: #FFA500; font-weight: bold; }
+      
       /* Node highlighting */
       .cm-highlight {
         background-color: rgba(144, 238, 144, 0.4);
@@ -120,7 +123,6 @@ export class TurtleEditor {
     `
     document.head.appendChild(styleEl)
   }
-
   /**
    * Handler for content changes
    */
