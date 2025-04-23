@@ -1,3 +1,5 @@
+Please create a concise but comprehensive document artifact to aid in future plans. It will list the features then describe the architecture of the code. Points where refactoring may be desirable should be highlighted. Finally give a list of potential enhancements.
+
 There are still some unshortened uris
 
 A little work is needed around the GraphVisualizer. It's currently inconsistent and rather ugly.

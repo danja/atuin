@@ -260,9 +260,17 @@ export class GraphVisualizer {
       this._countNamespace(triple.object, uriCounts)
     }
 
-    // Add any frequently occurring namespaces without a prefix
+    // Add common namespaces we should know about
+    if (!this.prefixes['ex'] && !this.prefixes['example']) {
+      const exNs = 'http://example.org/'
+      if ([...uriCounts.keys()].some(ns => ns.includes('example.org'))) {
+        this.prefixes['ex'] = exNs
+      }
+    }
+
+    // Look for other common namespaces that might be missing a prefix
     const commonNamespaces = [...uriCounts.entries()]
-      .filter(([ns, count]) => count >= 3 && !this._hasPrefix(ns))
+      .filter(([ns, count]) => count >= 2 && !this._hasPrefix(ns))
       .sort((a, b) => b[1] - a[1])
 
     // Create prefixes for common namespaces
@@ -270,6 +278,8 @@ export class GraphVisualizer {
       const ns = commonNamespaces[i][0]
       if (ns.includes('example.org')) {
         this.prefixes['ex'] = ns
+      } else if (ns.includes('schema.org')) {
+        this.prefixes['schema'] = ns
       } else {
         // Extract a reasonable prefix from the namespace
         const prefixMatch = /\/\/([^./]+)/.exec(ns) || /\/([^./]+)/.exec(ns)
@@ -419,7 +429,8 @@ export class GraphVisualizer {
       if (label === id) {
         // If it includes 'http://example.org/', replace with 'ex:'
         if (id.includes('http://example.org/')) {
-          label = id.replace('http://example.org/', 'ex:')
+          const localName = id.substring(id.lastIndexOf('/') + 1)
+          label = 'ex:' + localName
         } else {
           // Otherwise use just the local name
           const parts = URIUtils.splitNamespace(id)
@@ -430,6 +441,12 @@ export class GraphVisualizer {
         if (label.length > this.options.labelMaxLength) {
           label = label.substring(0, this.options.labelMaxLength - 3) + '...'
         }
+      }
+
+      // Safety check - if we still have http://, just use the last segment
+      if (label.includes('http://')) {
+        const lastSegment = label.substring(label.lastIndexOf('/') + 1)
+        label = lastSegment
       }
     }
 
@@ -472,19 +489,26 @@ export class GraphVisualizer {
     if (predicateValue === 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type') {
       edgeLabel = 'a'
     } else {
-      // Try to get prefixed form
-      edgeLabel = URIUtils.shrinkUri(predicateValue, this.prefixes)
-
-      // If that fails, try custom shortening
-      if (edgeLabel === predicateValue) {
-        // If it includes 'http://example.org/', replace with 'ex:'
-        if (predicateValue.includes('http://example.org/')) {
-          edgeLabel = predicateValue.replace('http://example.org/', 'ex:')
-        } else {
-          // Otherwise use just the local name
-          const parts = URIUtils.splitNamespace(predicateValue)
-          edgeLabel = parts.name || ''
+      // Get proper prefixed form, prioritizing existing prefixes
+      for (const [prefix, namespace] of Object.entries(this.prefixes)) {
+        if (predicateValue.startsWith(namespace)) {
+          edgeLabel = prefix + ':' + predicateValue.substring(namespace.length)
+          break
         }
+      }
+
+      // If no prefix matched, generate one for example.org
+      if (edgeLabel === '' && predicateValue.includes('example.org')) {
+        const match = predicateValue.match(/http:\/\/example\.org\/(.+)/)
+        if (match) {
+          edgeLabel = 'ex:' + match[1]
+        }
+      }
+
+      // Final fallback to local name only
+      if (edgeLabel === '') {
+        const parts = URIUtils.splitNamespace(predicateValue)
+        edgeLabel = parts.name || predicateValue.substring(predicateValue.lastIndexOf('/') + 1)
       }
     }
 
