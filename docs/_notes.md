@@ -1,3 +1,5 @@
+There are still some unshortened uris
+
 A little work is needed around the GraphVisualizer. It's currently inconsistent and rather ugly.
 We will do it in small steps, starting with : property labels and literals should be in rounded rectangles
 

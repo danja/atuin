@@ -17,7 +17,7 @@ export class GraphVisualizer {
 
     this.options = {
       defaultPrefixes: ['rdf', 'rdfs', 'owl'],
-      labelMaxLength: 15,
+      labelMaxLength: 20,
       hidden: true,
       freeze: false
     }
@@ -221,8 +221,18 @@ export class GraphVisualizer {
     try {
       const { triples, prefixes } = await this.parser.parseTriples(content)
 
-      // Store prefixes for label generation
-      this.prefixes = prefixes || {}
+      // Add some common prefixes if they don't exist in the document
+      this.prefixes = {
+        rdf: 'http://www.w3.org/1999/02/22-rdf-syntax-ns#',
+        rdfs: 'http://www.w3.org/2000/01/rdf-schema#',
+        owl: 'http://www.w3.org/2002/07/owl#',
+        xsd: 'http://www.w3.org/2001/XMLSchema#',
+        ...prefixes
+      }
+
+      // Add any missing common prefixes we can infer from the data
+      this._inferPrefixes(triples)
+
       this.triples = triples
 
       this.clusterIndex = 0
@@ -239,12 +249,75 @@ export class GraphVisualizer {
     }
   }
 
+  // Try to infer common prefixes from the data
+  _inferPrefixes(triples) {
+    const uriCounts = new Map()
+
+    // Count URI namespaces
+    for (const triple of triples) {
+      this._countNamespace(triple.subject, uriCounts)
+      this._countNamespace(triple.predicate, uriCounts)
+      this._countNamespace(triple.object, uriCounts)
+    }
+
+    // Add any frequently occurring namespaces without a prefix
+    const commonNamespaces = [...uriCounts.entries()]
+      .filter(([ns, count]) => count >= 3 && !this._hasPrefix(ns))
+      .sort((a, b) => b[1] - a[1])
+
+    // Create prefixes for common namespaces
+    for (let i = 0; i < commonNamespaces.length; i++) {
+      const ns = commonNamespaces[i][0]
+      if (ns.includes('example.org')) {
+        this.prefixes['ex'] = ns
+      } else {
+        // Extract a reasonable prefix from the namespace
+        const prefixMatch = /\/\/([^./]+)/.exec(ns) || /\/([^./]+)/.exec(ns)
+        if (prefixMatch) {
+          const suggestedPrefix = prefixMatch[1].toLowerCase()
+          if (!this.prefixes[suggestedPrefix]) {
+            this.prefixes[suggestedPrefix] = ns
+          }
+        }
+      }
+    }
+  }
+
+  _countNamespace(term, uriCounts) {
+    if (!term || URIUtils.isLiteral(term)) return
+
+    const uri = term.value || term
+    if (typeof uri !== 'string') return
+
+    const parts = URIUtils.splitNamespace(uri)
+    if (parts.namespace) {
+      uriCounts.set(parts.namespace, (uriCounts.get(parts.namespace) || 0) + 1)
+    }
+  }
+
+  _hasPrefix(namespace) {
+    return Object.values(this.prefixes).some(ns => ns === namespace)
+  }
+
   _createVisualization() {
     this.nodes.clear()
     this.edges.clear()
 
     const classes = new Set()
     const properties = new Set()
+
+    // Enhanced handling of RDF type triples
+    const rdfType = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type'
+    const propertyTypes = [
+      'http://www.w3.org/1999/02/22-rdf-syntax-ns#Property',
+      'http://www.w3.org/2000/01/rdf-schema#Property',
+      'http://www.w3.org/2002/07/owl#ObjectProperty',
+      'http://www.w3.org/2002/07/owl#DatatypeProperty'
+    ]
+    const classTypes = [
+      'http://www.w3.org/2000/01/rdf-schema#Class',
+      'http://www.w3.org/2002/07/owl#Class'
+    ]
 
     // First pass: identify classes and properties
     for (const triple of this.triples) {
@@ -253,16 +326,17 @@ export class GraphVisualizer {
       const object = triple.object.value || triple.object
 
       // Check for class and property type declarations
-      if (predicate === 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type') {
-        if (object === 'http://www.w3.org/1999/02/22-rdf-syntax-ns#Property' ||
-          object === 'http://www.w3.org/2000/01/rdf-schema#Property' ||
-          object === 'http://www.w3.org/2002/07/owl#ObjectProperty' ||
-          object === 'http://www.w3.org/2002/07/owl#DatatypeProperty') {
+      if (predicate === rdfType) {
+        if (propertyTypes.includes(object)) {
           properties.add(subject)
-        } else if (object === 'http://www.w3.org/2000/01/rdf-schema#Class' ||
-          object === 'http://www.w3.org/2002/07/owl#Class') {
+        } else if (classTypes.includes(object)) {
           classes.add(subject)
         }
+      }
+
+      // Add properties directly - this allows us to identify them even without explicit typing
+      if (predicate !== rdfType) {
+        properties.add(predicate)
       }
     }
 
@@ -282,6 +356,12 @@ export class GraphVisualizer {
         }
         this.nodes.add(this._createNode(subject, nodeType))
       }
+
+      // Create property node (for visualization debugging)
+      // Commented out since we don't normally show predicates as nodes
+      // if (!this.nodes.get(predicate) && predicate !== rdfType) {
+      //   this.nodes.add(this._createNode(predicate, 'property'))
+      // }
 
       // Create object node if it doesn't exist
       if (!this.nodes.get(object)) {
@@ -311,22 +391,50 @@ export class GraphVisualizer {
   }
 
   _createNode(id, type) {
-    // Get the prefixed form when possible
-    let label = URIUtils.isLiteral(id) ? id : URIUtils.shrinkUri(id, this.prefixes)
+    let label
+    let originalId = id
 
-    // If no prefix match, try to get the local name
-    if (label === id && !URIUtils.isLiteral(id)) {
-      const parts = URIUtils.splitNamespace(id)
-      label = parts.name || label
+    // Handle term objects by extracting their value
+    if (id && typeof id === 'object' && id.value) {
+      id = id.value
     }
 
-    // For literals, truncate if too long
-    if (URIUtils.isLiteral(id) && label.length > this.options.labelMaxLength) {
-      label = label.substring(0, this.options.labelMaxLength - 3) + '...'
+    if (URIUtils.isLiteral(id)) {
+      // For literals, use the literal value but truncate if needed
+      // Strip quotes from literals for display
+      if (typeof id === 'string' && id.startsWith('"') && id.endsWith('"')) {
+        label = id.substring(1, id.length - 1)
+      } else {
+        label = id
+      }
+
+      if (label.length > this.options.labelMaxLength) {
+        label = label.substring(0, this.options.labelMaxLength - 3) + '...'
+      }
+    } else {
+      // For URIs, first try the prefixed form
+      label = URIUtils.shrinkUri(id, this.prefixes)
+
+      // If it couldn't be shortened with existing prefixes, try making a short label
+      if (label === id) {
+        // If it includes 'http://example.org/', replace with 'ex:'
+        if (id.includes('http://example.org/')) {
+          label = id.replace('http://example.org/', 'ex:')
+        } else {
+          // Otherwise use just the local name
+          const parts = URIUtils.splitNamespace(id)
+          label = parts.name || id
+        }
+
+        // If the local name is still too long, truncate it
+        if (label.length > this.options.labelMaxLength) {
+          label = label.substring(0, this.options.labelMaxLength - 3) + '...'
+        }
+      }
     }
 
     const node = {
-      id,
+      id: originalId,
       label,
       group: type,
       title: id  // Full URI on hover
@@ -353,18 +461,30 @@ export class GraphVisualizer {
 
   _createEdge(subject, predicate, object) {
     let edgeLabel = ''
+    let predicateValue = predicate
+
+    // Handle term objects by extracting their value
+    if (predicate && typeof predicate === 'object' && predicate.value) {
+      predicateValue = predicate.value
+    }
 
     // Special case for rdf:type - display as "a" like in Turtle
-    if (predicate === 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type') {
+    if (predicateValue === 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type') {
       edgeLabel = 'a'
     } else {
       // Try to get prefixed form
-      edgeLabel = URIUtils.shrinkUri(predicate, this.prefixes)
+      edgeLabel = URIUtils.shrinkUri(predicateValue, this.prefixes)
 
-      // If that fails, use local name
-      if (edgeLabel === predicate) {
-        const parts = URIUtils.splitNamespace(predicate)
-        edgeLabel = parts.name || edgeLabel
+      // If that fails, try custom shortening
+      if (edgeLabel === predicateValue) {
+        // If it includes 'http://example.org/', replace with 'ex:'
+        if (predicateValue.includes('http://example.org/')) {
+          edgeLabel = predicateValue.replace('http://example.org/', 'ex:')
+        } else {
+          // Otherwise use just the local name
+          const parts = URIUtils.splitNamespace(predicateValue)
+          edgeLabel = parts.name || ''
+        }
       }
     }
 
@@ -372,15 +492,15 @@ export class GraphVisualizer {
       from: subject,
       to: object,
       label: edgeLabel,
-      title: predicate, // Full URI on hover
+      title: predicateValue, // Full URI on hover
       type: 'predicate',
       arrows: 'to',
-      predicateUri: predicate,
+      predicateUri: predicateValue,
       font: {
         size: 10,
         align: 'middle',
         face: 'sans-serif',
-        multi: 'false'
+        background: 'rgba(255, 255, 255, 0.8)',
       },
       color: {
         color: '#0077aa',
