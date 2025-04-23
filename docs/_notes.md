@@ -1,3 +1,14 @@
+A little work is needed around the GraphVisualizer. It's currently inconsistent and rather ugly.
+
+- property labels and literals should be in rounded rectangles
+- colors in the visualizer should echo those in the syntax highlighting, except
+- nodes corresponding to rdf classes, properties should have orange, yellow backgrounds
+- properties in the visualizer should be shown in their prefixed form
+
+Other suggestions welcome.
+
+---
+
 Please modify so that the namespace URI strings, eg. '<http://example.org/>' are different than other strings and colored FFA500.
 Take care to use a valid token tag in the Lezer highlighting system.
 
