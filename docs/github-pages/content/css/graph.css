@@ -1,0 +1,105 @@
+/* Graph visualization specific styles */
+
+#graph-container {
+  height: 100%;
+  width: 100%;
+  background-color: #f9f9f9;
+  position: relative;
+}
+
+/* Network visualization styles */
+.vis-network {
+  width: 100%;
+  height: 100%;
+}
+
+/* Node styling */
+.vis-node {
+  font-size: 14px;
+}
+
+.vis-node.subject {
+  background-color: #97B0F8;
+  border-color: #4466cc;
+}
+
+.vis-node.object {
+  background-color: #D5DDF6;
+  border-color: #97B0F8;
+}
+
+.vis-node.literal {
+  background-color: #fff6a5;
+  border-color: #ffcc00;
+  border-style: dashed;
+}
+
+/* Selected node styling */
+.vis-node.vis-selected {
+  background-color: #FFF785;
+  border-color: #FFC200;
+  box-shadow: 0 0 8px #FFC200;
+}
+
+/* Edge styling */
+.vis-edge {
+  color: #555;
+}
+
+.vis-edge.predicate {
+  width: 2px;
+}
+
+/* Edge label styling */
+.vis-edgelabel {
+  font-size: 12px;
+  background-color: rgba(255, 255, 255, 0.7);
+  padding: 2px 4px;
+  border-radius: 2px;
+}
+
+/* Cluster styling */
+.vis-cluster {
+  background-color: #ffce99;
+  border-color: #ff9c33;
+}
+
+.vis-cluster:hover {
+  background-color: #ffe6cc;
+  border-color: #ffb566;
+}
+
+/* Network navigation controls */
+.vis-navigation {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+}
+
+.vis-navigation button {
+  width: 30px;
+  height: 30px;
+  background-color: white;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  margin: 2px;
+  cursor: pointer;
+}
+
+.vis-navigation button:hover {
+  background-color: #eee;
+}
+
+/* Tooltip styling */
+.vis-tooltip {
+  position: absolute;
+  padding: 8px;
+  background-color: white;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  font-size: 12px;
+  z-index: 900;
+  max-width: 300px;
+  word-wrap: break-word;
+}
