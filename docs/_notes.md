@@ -7,7 +7,7 @@ Now please change the prefixes in the namespace declarations to a light green. S
 @prefix ex: <http://example.org/> .
 ```
 
-rdf: rdfs: owl: ex: should be green.
+rdf: rdfs: owl: ex: will be green.
 
 ---
 

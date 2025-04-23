@@ -47,8 +47,11 @@ const turtleHighlightStyle = HighlightStyle.define([
 
   { tag: t.meta, color: '#9900cc' },
 
-  // Add dark green color for namespace prefixes
+  // Add dark green color for namespace prefixes in normal usage
   { tag: t.moduleKeyword, color: '#006400', fontWeight: 'bold' },
+
+  // Add light green color for prefix declarations in @prefix statements
+  { tag: [t.special(t.variableName)], color: '#4CAF50', fontWeight: 'bold' },
 
   // Style for local names (part after the prefix)
   { tag: t.variableName, color: '#039be5' }

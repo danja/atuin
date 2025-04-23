@@ -8,6 +8,7 @@ export const turtleMode = StreamLanguage.define({
     prefix: t.keyword,
     base: t.keyword,
     prefixName: t.definition,
+    prefixDeclaration: t.special(t.variableName), // Using special(variableName) instead of number2
     iri: t.string,
     a: t.atom,
     semicolon: t.operator,
@@ -81,7 +82,7 @@ export const turtleMode = StreamLanguage.define({
     if (state.inPrefix && state.prefixStart) {
       if (stream.match(/[a-zA-Z0-9_-]+:/, true) || stream.match(/:/, true)) {
         state.prefixStart = false
-        return 'prefixName'
+        return 'prefixDeclaration' // Changed to a new token type for prefix declarations
       }
     }
 
