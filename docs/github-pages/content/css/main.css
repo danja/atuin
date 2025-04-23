@@ -11,6 +11,10 @@
   --divider-color: #aaa;
 }
 
+#about {
+  text-align: right;
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
@@ -329,4 +333,43 @@ header {
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(-20px); }
   to { opacity: 1; transform: translateY(0); }
+}
+.open-source-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 5px 0;
+  width: 100%;
+}
+
+.left-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.right-info {
+  margin-left: auto;
+}
+
+.open-source-info img {
+  height: 20px;
+}
+
+.open-source-info a {
+  text-decoration: none;
+  color: inherit;
+}
+
+.open-source-info a:hover {
+  text-decoration: underline;
+}
+
+.license-badge, .github-badge {
+  transition: opacity 0.2s;
+}
+
+.license-badge:hover, .github-badge:hover {
+  opacity: 0.8;
 }
