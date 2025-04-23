@@ -8,7 +8,7 @@
     "dev": "webpack serve --mode development",
     "test": "jasmine --config=jasmine.json",
     "docs": "jsdoc -c jsdoc.json",
-    "ghp": "docs/github-pages/deploy.sh",
+    "ghp": "webpack --mode production && docs/github-pages/deploy.sh",
     "rp": "repomix -c repomix.config.json ."
   },
   "keywords": [
