@@ -3,6 +3,9 @@ import { DataSet } from 'vis-data/standalone/esm/vis-data.js'
 import { RDFParser } from './Parser.js'
 import { URIUtils } from '../utils/URIUtils.js'
 import { eventBus, EVENTS } from '../../../../evb/src/index.js'
+import { Prefixes } from 'n3'
+import rdf from '@rdfjs/data-model'
+import PrefixMap from '@rdfjs/prefix-map'
 
 export class GraphVisualizer {
   constructor(container, logger) {
@@ -227,20 +230,14 @@ export class GraphVisualizer {
     try {
       const { triples, prefixes } = await this.parser.parseTriples(content)
 
-      // Add some common prefixes if they don't exist in the document
-      this.prefixes = {
-        rdf: 'http://www.w3.org/1999/02/22-rdf-syntax-ns#',
-        rdfs: 'http://www.w3.org/2000/01/rdf-schema#',
-        owl: 'http://www.w3.org/2002/07/owl#',
-        xsd: 'http://www.w3.org/2001/XMLSchema#',
-        ...prefixes
-      }
+      // Convert parsed prefixes to PrefixMap entries
+      const prefixEntries = Object.entries(prefixes).map(([prefix, ns]) => [prefix, rdf.namedNode(ns)])
+      this.prefixMap = new PrefixMap(prefixEntries, { factory: rdf })
 
-      // Add any missing common prefixes we can infer from the data
+      this.prefixes = { ...prefixes }
       this._inferPrefixes(triples)
 
       this.triples = triples
-
       this.clusterIndex = 0
       this.clusters = []
       this.clusterLevel = 0
@@ -428,31 +425,23 @@ export class GraphVisualizer {
         label = label.substring(0, this.options.labelMaxLength - 3) + '...'
       }
     } else {
-      // For URIs, first try the prefixed form
-      label = URIUtils.shrinkUri(id, this.prefixes)
-
-      // If it couldn't be shortened with existing prefixes, try making a short label
-      if (label === id) {
-        // If it includes 'http://example.org/', replace with 'ex:'
-        if (id.includes('http://example.org/')) {
-          const localName = id.substring(id.lastIndexOf('/') + 1)
-          label = 'ex:' + localName
-        } else {
-          // Otherwise use just the local name
-          const parts = URIUtils.splitNamespace(id)
-          label = parts.name || id
-        }
-
-        // If the local name is still too long, truncate it
-        if (label.length > this.options.labelMaxLength) {
-          label = label.substring(0, this.options.labelMaxLength - 3) + '...'
-        }
+      // Use PrefixMap for prefix abbreviation, fallback to local name
+      let nn = typeof id === 'string' ? rdf.namedNode(id) : id
+      const shrunk = this.prefixMap.shrink(nn)
+      if (shrunk && shrunk.value && shrunk.value.includes(':') && !shrunk.value.includes('://')) {
+        label = shrunk.value // CURIE
+      } else {
+        // fallback: extract local name
+        const uri = nn.value || nn
+        const hash = uri.lastIndexOf('#')
+        const slash = uri.lastIndexOf('/')
+        const pos = Math.max(hash, slash)
+        label = uri.substring(pos + 1)
       }
 
-      // Safety check - if we still have http://, just use the last segment
-      if (label.includes('http://')) {
-        const lastSegment = label.substring(label.lastIndexOf('/') + 1)
-        label = lastSegment
+      // If the local name is still too long, truncate it
+      if (label.length > this.options.labelMaxLength) {
+        label = label.substring(0, this.options.labelMaxLength - 3) + '...'
       }
     }
 
@@ -491,30 +480,21 @@ export class GraphVisualizer {
       predicateValue = predicate.value
     }
 
-    // Special case for rdf:type - display as "a" like in Turtle
     if (predicateValue === 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type') {
       edgeLabel = 'a'
     } else {
-      // Get proper prefixed form, prioritizing existing prefixes
-      for (const [prefix, namespace] of Object.entries(this.prefixes)) {
-        if (predicateValue.startsWith(namespace)) {
-          edgeLabel = prefix + ':' + predicateValue.substring(namespace.length)
-          break
-        }
-      }
-
-      // If no prefix matched, generate one for example.org
-      if (edgeLabel === '' && predicateValue.includes('example.org')) {
-        const match = predicateValue.match(/http:\/\/example\.org\/(.+)/)
-        if (match) {
-          edgeLabel = 'ex:' + match[1]
-        }
-      }
-
-      // Final fallback to local name only
-      if (edgeLabel === '') {
-        const parts = URIUtils.splitNamespace(predicateValue)
-        edgeLabel = parts.name || predicateValue.substring(predicateValue.lastIndexOf('/') + 1)
+      // Use PrefixMap for prefix abbreviation, fallback to local name
+      let nn = typeof predicateValue === 'string' ? rdf.namedNode(predicateValue) : predicateValue
+      const shrunk = this.prefixMap.shrink(nn)
+      if (shrunk && shrunk.value && shrunk.value.includes(':') && !shrunk.value.includes('://')) {
+        edgeLabel = shrunk.value // CURIE
+      } else {
+        // fallback: extract local name
+        const uri = nn.value || nn
+        const hash = uri.lastIndexOf('#')
+        const slash = uri.lastIndexOf('/')
+        const pos = Math.max(hash, slash)
+        edgeLabel = uri.substring(pos + 1)
       }
     }
 

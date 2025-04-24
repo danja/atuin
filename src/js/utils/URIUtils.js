@@ -93,7 +93,19 @@ export class URIUtils {
 
     for (const [prefix, namespace] of Object.entries(prefixes)) {
       if (uri.startsWith(namespace)) {
-        return `${prefix}:${uri.substring(namespace.length)}`
+        const local = uri.substring(namespace.length)
+        // Only return prefix:localName if local is not a full URI
+        if (local && !local.startsWith('http')) {
+          return `${prefix}:${local}`
+        }
+      }
+    }
+
+    // Fallback: try to split and use the prefix if the namespace matches
+    for (const [prefix, namespace] of Object.entries(prefixes)) {
+      const { namespace: ns, name } = this.splitNamespace(uri)
+      if (ns === namespace && name && !name.startsWith('http')) {
+        return `${prefix}:${name}`
       }
     }
 
