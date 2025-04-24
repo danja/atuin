@@ -334,63 +334,69 @@ export class GraphVisualizer {
 
     // First pass: identify classes and properties
     for (const triple of this.triples) {
-      const subject = triple.subject.value || triple.subject
-      const predicate = triple.predicate.value || triple.predicate
-      const object = triple.object.value || triple.object
+      const subject = triple.subject
+      const predicate = triple.predicate
+      const object = triple.object
 
       // Check for class and property type declarations
-      if (predicate === rdfType) {
-        if (propertyTypes.includes(object)) {
-          properties.add(subject)
-        } else if (classTypes.includes(object)) {
-          classes.add(subject)
+      if (predicate.value === rdfType) {
+        if (propertyTypes.includes(object.value)) {
+          properties.add(subject.value)
+        } else if (classTypes.includes(object.value)) {
+          classes.add(subject.value)
         }
       }
 
       // Add properties directly - this allows us to identify them even without explicit typing
-      if (predicate !== rdfType) {
-        properties.add(predicate)
+      if (predicate.value !== rdfType) {
+        properties.add(predicate.value)
       }
     }
 
     // Second pass: create nodes and edges
     for (const triple of this.triples) {
-      const subject = triple.subject.value || triple.subject
-      const predicate = triple.predicate.value || triple.predicate
-      const object = triple.object.value || triple.object
+      const subject = triple.subject
+      const predicate = triple.predicate
+      const object = triple.object
 
       // Create subject node if it doesn't exist
-      if (!this.nodes.get(subject)) {
-        let nodeType = 'subject'
-        if (classes.has(subject)) {
+      if (!this.nodes.get(subject.value)) {
+        let nodeType
+        if (URIUtils.isLiteral(subject)) {
+          nodeType = 'literal'
+        } else if (classes.has(subject.value)) {
           nodeType = 'class'
-        } else if (properties.has(subject)) {
+        } else if (properties.has(subject.value)) {
           nodeType = 'property'
+        } else {
+          nodeType = 'subject'
         }
-        this.nodes.add(this._createNode(subject, nodeType))
+        this.nodes.add(this._createNode(subject.value, nodeType))
       }
 
       // Create property node (for visualization debugging)
       // Commented out since we don't normally show predicates as nodes
-      // if (!this.nodes.get(predicate) && predicate !== rdfType) {
-      //   this.nodes.add(this._createNode(predicate, 'property'))
+      // if (!this.nodes.get(predicate.value) && predicate.value !== rdfType) {
+      //   this.nodes.add(this._createNode(predicate.value, 'property'))
       // }
 
       // Create object node if it doesn't exist
-      if (!this.nodes.get(object)) {
-        let nodeType = 'object'
-        if (classes.has(object)) {
-          nodeType = 'class'
-        } else if (properties.has(object)) {
-          nodeType = 'property'
-        } else if (URIUtils.isLiteral(object)) {
+      if (!this.nodes.get(object.value)) {
+        let nodeType
+        if (URIUtils.isLiteral(object)) {
           nodeType = 'literal'
+        } else if (classes.has(object.value)) {
+          nodeType = 'class'
+        } else if (properties.has(object.value)) {
+          nodeType = 'property'
+        } else {
+          nodeType = 'object'
         }
-        this.nodes.add(this._createNode(object, nodeType))
+        this.nodes.add(this._createNode(object.value, nodeType))
       }
 
       // Create edge with proper label
-      this._createEdge(subject, predicate, object)
+      this._createEdge(subject.value, predicate.value, object.value)
     }
 
     // Automatic clustering for large graphs
@@ -448,24 +454,27 @@ export class GraphVisualizer {
     const node = {
       id: originalId,
       label,
-      group: type,
-      title: id  // Full URI on hover
+      title: id // Full URI on hover
     }
 
-    // Style nodes based on type
     if (type === 'literal') {
       node.shape = 'box'
       node.borderRadius = 8
-      node.font = { color: '#a31515' }
+      node.font = { color: '#a31515', background: '#fff' }
       node.widthConstraint = { minimum: 50, maximum: 200 }
+      node.color = this.colors.literal
     } else if (type === 'property') {
-      node.shape = 'box'
-      node.borderRadius = 8
-      node.font = { color: '#0077aa', bold: true }
+      node.shape = 'ellipse'
+      node.color = this.colors.property
     } else if (type === 'class') {
-      node.shape = 'box'
-      node.borderRadius = 8
-      node.font = { color: '#aa6600', bold: true }
+      node.shape = 'ellipse'
+      node.color = this.colors.class
+    } else if (type === 'subject') {
+      node.shape = 'ellipse'
+      node.color = this.colors.subject
+    } else if (type === 'object') {
+      node.shape = 'ellipse'
+      node.color = this.colors.object
     }
 
     return node
