@@ -1,7 +1,7 @@
 # Atuin
 
 ![Build](https://github.com/danja/atuin/actions/workflows/ci.yml/badge.svg)
-![ESM](https://img.shields.io/badge/ESM-supported-blue)
+![Tests](https://github.com/danja/atuin/actions/workflows/test.yml/badge.svg)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 # Turtle RDF Editor
