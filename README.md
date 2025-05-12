@@ -5,6 +5,12 @@
 
 # Turtle RDF Editor
 
+---
+
+🚀 **Try the live demo:** [https://danja.github.io/atuin/](https://danja.github.io/atuin/)
+
+---
+
 ### [Demo](https://danja.github.io/atuin/)
 
 **If you recognise the general design or even created the logo yourself, please let me know so I can acknowledge.** Atuin is all-new code but based heavily on someone else's from years ago. Alas I forget who, and I didn't see a ref in the original code I have.
