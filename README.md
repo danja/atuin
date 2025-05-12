@@ -12,7 +12,7 @@
 
 This is mostly a (lively) placeholder right now. You can only load files using copy & paste. I don't actually need it as a Turtle editor _per se_, though I will add things like fs load/save soon. My motivation is to use it in [Semem](https://github.com/danja/semem), an agent memory thing I'm working on that will need seriously cluster-capable visualization of RDF graphs.
 
-_The following written by my colleague ~~Claude~~ GitHub Copilot. Be warned, reality isn't her first language. Proper docs will appear in finite time._
+_The following written by my colleague ~~Claude~~ GitHub Copilot. Be warned, reality isn't their first language. Proper docs will appear in finite time._
 
 Atuin is a web-based editor for Turtle RDF files with an integrated graph visualization. This modern implementation uses vanilla JavaScript with ES modules (ESM), providing a clean, modular architecture. It is tested with [Vitest](https://vitest.dev/) and uses the [evb](https://github.com/danja/evb) event bus for decoupled communication between components.
 
