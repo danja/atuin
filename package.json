@@ -6,7 +6,7 @@
   "scripts": {
     "build": "webpack --mode production",
     "dev": "webpack serve --mode development",
-    "test": "jasmine --config=jasmine.json",
+    "test": "vitest run",
     "docs": "jsdoc -c jsdoc.json",
     "ghp": "webpack --mode production && docs/github-pages/deploy.sh",
     "rp": "repomix -c repomix.config.json ."
@@ -30,6 +30,7 @@
     "@rdfjs/namespace": "^2.0.0",
     "@rdfjs/parser-n3": "^2.0.1",
     "@rdfjs/serializer-ntriples": "^2.0.1",
+    "evb": "^0.6.1",
     "n3": "^1.17.2",
     "rdf-ext": "^2.2.0",
     "readable-stream": "^4.4.2",
@@ -43,9 +44,6 @@
     "css-loader": "^6.10.0",
     "docdash": "^2.0.2",
     "html-webpack-plugin": "^5.6.0",
-    "jasmine": "^5.1.0",
-    "jasmine-browser-runner": "^2.3.0",
-    "jasmine-core": "^5.1.0",
     "jsdoc": "^4.0.2",
     "jsdom": "^26.1.0",
     "style-loader": "^3.3.4",

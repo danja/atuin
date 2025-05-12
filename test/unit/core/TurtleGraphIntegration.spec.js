@@ -1,6 +1,6 @@
 import { TurtleEditor } from '../../../src/js/core/TurtleEditor.js'
 import { GraphVisualizer } from '../../../src/js/core/GraphVisualizer.js'
-import { eventBus, EVENTS } from '../../../../evb/src/index.js'
+import { eventBus, EVENTS } from 'evb'
 import { describe, it, beforeEach, expect, vi } from 'vitest'
 
 describe('TurtleEditor <-> GraphVisualizer integration via event bus', () => {

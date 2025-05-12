@@ -1,4 +1,10 @@
-# Atuin - Turtle RDF Editor
+# Atuin
+
+![Build](https://github.com/danja/atuin/actions/workflows/ci.yml/badge.svg)
+![ESM](https://img.shields.io/badge/ESM-supported-blue)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
+# Turtle RDF Editor
 
 ### [Demo](https://danja.github.io/atuin/)
 
@@ -6,9 +12,9 @@
 
 This is mostly a (lively) placeholder right now. You can only load files using copy & paste. I don't actually need it as a Turtle editor _per se_, though I will add things like fs load/save soon. My motivation is to use it in [Semem](https://github.com/danja/semem), an agent memory thing I'm working on that will need seriously cluster-capable visualization of RDF graphs.
 
-_The following written by my colleague Claude. Be warned, reality isn't his first language. Proper docs will appear in finite time._
+_The following written by my colleague ~~Claude~~ GitHub Copilot. Be warned, reality isn't her first language. Proper docs will appear in finite time._
 
-Atuin is a web-based editor for Turtle RDF files with an integrated graph visualization. This modern implementation uses vanilla JavaScript with ES modules, providing a clean, modular architecture.
+Atuin is a web-based editor for Turtle RDF files with an integrated graph visualization. This modern implementation uses vanilla JavaScript with ES modules (ESM), providing a clean, modular architecture. It is tested with [Vitest](https://vitest.dev/) and uses the [evb](https://github.com/danja/evb) event bus for decoupled communication between components.
 
 ## Features
 
@@ -31,20 +37,21 @@ Atuin is a web-based editor for Turtle RDF files with an integrated graph visual
 
 1. Clone this repository
 
-```
+```sh
 git clone https://github.com/your-username/atuin.git
 cd atuin
 ```
 
-2. Install dependencies
+2. Install dependencies (including the local evb event bus library)
 
-```
+```sh
 npm install
+npm install ../evb
 ```
 
 3. Start the development server
 
-```
+```sh
 npm run dev
 ```
 
@@ -54,7 +61,7 @@ npm run dev
 
 To create a production build:
 
-```
+```sh
 npm run build
 ```
 
@@ -100,8 +107,19 @@ atuin/
 - vis-network (graph visualization)
 - N3.js (RDF parsing)
 - Webpack (bundling)
-- Jasmine (testing)
+- Vitest (testing)
 - JSDoc (documentation)
+- [evb](https://github.com/danja/evb) (event bus)
+
+## Testing
+
+This project uses [Vitest](https://vitest.dev/) for unit and integration tests. To run the tests:
+
+```sh
+npx vitest run
+```
+
+The test suite covers core logic, utilities, and integration between the editor and graph visualizer.
 
 ## Contributing
 
