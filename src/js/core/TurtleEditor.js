@@ -6,7 +6,7 @@ import { URIUtils } from '../utils/URIUtils.js'
 import { turtle } from './TurtleMode.js'
 import { syntaxErrorHighlighter, setSyntaxError } from './SyntaxErrorHighlighter.js'
 import { nodeHighlighter, setHighlightedNode } from './NodeHighlighter.js'
-import { eventBus, EVENTS } from '../../../../evb/src/index.js'
+import { eventBus, EVENTS } from 'evb'
 
 /**
  * Editor component for RDF Turtle syntax with syntax highlighting
