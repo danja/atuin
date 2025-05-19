@@ -1,11 +1,13 @@
 #editor-container {
-  height: 100%;
-  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: 100%; /* Assumes parent (.split-pane) provides a constrained height */
+  overflow: hidden; /* Child panes should manage their own overflow */
 }
 
 #input-contents {
   width: 100%;
-  height: 100%;
+  /* height: 100%; Removed, flex-grow in the rule above now manages height */
   font-family: 'Fira Code', 'Courier New', Courier, monospace;
   font-size: 14px;
   padding: 10px;
@@ -183,17 +185,22 @@
   color: #0000ff;
 }
 
-/* SPARQL Editor Pane specific styles */
+/* Editor Pane Styles (Turtle and SPARQL) */
+#turtle-editor-pane,
 #sparql-editor-pane {
-  position: relative; /* For absolute positioning of the toolbar */
-  height: 100%;
-  display: flex; /* Use flex to manage children */
-  flex-direction: column; /* Stack editor and toolbar vertically */
+  flex-grow: 1; /* Panes take remaining vertical space in #editor-container */
+  min-height: 0; /* Allows panes to shrink correctly in a flex container */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* Panes manage their own internal scrolling */
+  position: relative; /* Retained from original #sparql-editor-pane styles */
 }
 
-/* Ensure CodeMirror instance (or textarea if CM not yet init) takes up available space */
-#sparql-editor-pane .cm-editor, /* If CodeMirror is initialized */
-#sparql-contents /* Fallback for the textarea before CM init */ {
+/* Ensure CodeMirror instance or textarea takes up available space within its pane */
+#turtle-editor-pane .cm-editor,
+#input-contents, /* This is the textarea for Turtle */
+#sparql-editor-pane .cm-editor,
+#sparql-contents /* This is the textarea for SPARQL */ {
   flex-grow: 1; /* Takes up all available vertical space */
   height: auto; /* Override fixed height if any */
   overflow-y: auto; /* Allow scrolling within the editor */

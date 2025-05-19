@@ -80,7 +80,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const logger = new LoggerService('message-queue');
 
   // Initialize SparqlService
-  const sparqlService = new SparqlService();
+  const sparqlService = new SparqlService(logger);
 
   // Get the editor and graph container elements
   const editorElement = document.getElementById('input-contents')

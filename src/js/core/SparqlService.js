@@ -3,11 +3,13 @@
  * Service for executing SPARQL queries against a given endpoint.
  */
 
-import { LoggerService } from '../services/LoggerService.js';
-
 export class SparqlService {
-  constructor() {
-    this.logger = new LoggerService('SparqlService');
+  /**
+   * Creates a new SparqlService.
+   * @param {LoggerService} logger - The logger service instance.
+   */
+  constructor(logger) {
+    this.logger = logger;
   }
 
   /**
