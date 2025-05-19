@@ -69,7 +69,12 @@ export class UIManager {
       dialogCancelButton: document.getElementById('dialog-cancel'),
 
       // SPARQL Editor Toolbar
-      runSparqlQueryButton: document.getElementById('run-sparql-query')
+      runSparqlQueryButton: document.getElementById('run-sparql-query'),
+
+      // View Pane Content
+      graphContainer: document.getElementById('graph-container'),
+      sparqlResultsContainer: document.getElementById('sparql-results-container'),
+      sparqlResultsTableWrapper: document.getElementById('sparql-results-table-wrapper')
     }
 
     // Set up event listeners
@@ -190,6 +195,74 @@ export class UIManager {
    */
   _handleDecluster() {
     this.visualizer.openClusters()
+  }
+
+  /**
+   * Displays SPARQL query results in a table.
+   * @private
+   * @param {Object} data - The SPARQL query result data in JSON format.
+   */
+  _displaySparqlResults(data) {
+    if (!this.elements.sparqlResultsContainer || !this.elements.sparqlResultsTableWrapper || !this.elements.graphContainer) {
+      this.logger.error('SPARQL results view elements not found.');
+      return;
+    }
+
+    // Clear previous results
+    this.elements.sparqlResultsTableWrapper.innerHTML = '';
+
+    if (!data || !data.results || !data.results.bindings || data.results.bindings.length === 0) {
+      const noResultsMessage = document.createElement('p');
+      noResultsMessage.textContent = 'No results found for the query.';
+      this.elements.sparqlResultsTableWrapper.appendChild(noResultsMessage);
+    } else {
+      const table = document.createElement('table');
+      const thead = document.createElement('thead');
+      const tbody = document.createElement('tbody');
+      const headerRow = document.createElement('tr');
+
+      // Create table headers
+      data.head.vars.forEach(varName => {
+        const th = document.createElement('th');
+        th.textContent = varName;
+        headerRow.appendChild(th);
+      });
+      thead.appendChild(headerRow);
+      table.appendChild(thead);
+
+      // Create table rows
+      data.results.bindings.forEach(binding => {
+        const tr = document.createElement('tr');
+        data.head.vars.forEach(varName => {
+          const td = document.createElement('td');
+          const valueObj = binding[varName];
+          if (valueObj) {
+            td.textContent = valueObj.value;
+            if (valueObj.type === 'uri') {
+              const a = document.createElement('a');
+              a.href = valueObj.value;
+              a.textContent = valueObj.value;
+              a.target = '_blank';
+              td.innerHTML = ''; // Clear textContent
+              td.appendChild(a);
+            }
+          } else {
+            td.textContent = ''; // Variable not bound in this solution
+          }
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      });
+      table.appendChild(tbody);
+      this.elements.sparqlResultsTableWrapper.appendChild(table);
+    }
+
+    // Show results, hide graph
+    this.elements.graphContainer.style.display = 'none';
+    this.elements.sparqlResultsContainer.style.display = ''; // Or 'flex' if it was set to display:flex initially
+    // Ensure the parent #view-pane is visible (if tab switching logic is elsewhere)
+    // This UIManager focuses on content within the view-pane.
+    // Actual tab switching for #view-pane vs #settings-pane is in main.js activateRightPanelTab
   }
 
   /**
@@ -376,14 +449,19 @@ export class UIManager {
     if (this.sparqlService && typeof this.sparqlService.executeQuery === 'function') {
       this.sparqlService.executeQuery(sparqlQuery, activeEndpoint)
         .then(results => {
-          this.logger.info('SPARQL query executed successfully.');
-          this.logger.debug('Results:', results);
-          // TODO: Process and display results in a more structured way (e.g., a table)
-          this.showMessage('Query successful! (Results in console)', 'success');
-          console.log('SPARQL Results:', results); // Log results for now
+          this.logger.info('SPARQL query executed successfully. Displaying results.');
+          this._displaySparqlResults(results);
         })
         .catch(error => {
-          this.logger.error('SPARQL query execution failed:', error);
+          this.logger.error('SPARQL query execution failed:', error.message);
+          // Optionally, clear or hide the results view on error
+          if (this.elements.sparqlResultsTableWrapper) {
+            this.elements.sparqlResultsTableWrapper.innerHTML = '<p>Error executing query. See console for details.</p>';
+          }
+          if (this.elements.graphContainer && this.elements.sparqlResultsContainer) {
+            this.elements.graphContainer.style.display = 'none'; // Or show graph as default error view
+            this.elements.sparqlResultsContainer.style.display = '';
+          }
           this.showMessage(`Query failed: ${error.message || 'Unknown error'}`, 'error');
         });
     } else {
