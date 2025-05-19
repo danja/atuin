@@ -1,7 +1,7 @@
 import { sparqlTheme } from './SPARQLTheme.js'
 import { EditorState } from '@codemirror/state'
 import { EditorView, lineNumbers, highlightActiveLine } from '@codemirror/view'
-import { sparqlMode } from './SPARQLMode.js'
+import { sparql } from './SPARQLMode.js'
 
 /**
  * Editor component for SPARQL syntax with syntax highlighting
@@ -23,16 +23,14 @@ export class SPARQLEditor {
    * Initialize the editor with CodeMirror
    */
   initialize() {
-    // Add the syntax highlighting styles
-    this._addSyntaxStyles()
-
-    // Create the editor
+    // Create the editor with theme and language support
     const startState = EditorState.create({
       doc: this.element.value,
       extensions: [
         lineNumbers(),
         highlightActiveLine(),
-        sparqlMode,
+        sparql(),
+        sparqlTheme,  // Apply the theme as an extension
         EditorView.updateListener.of(update => {
           if (update.docChanged) {
             this._onContentChange()
@@ -48,20 +46,6 @@ export class SPARQLEditor {
 
     // Hide the original textarea
     this.element.style.display = 'none'
-  }
-
-  /**
-   * Add syntax highlighting styles for SPARQL
-   * You can extend this to add custom styles if needed
-   */
-  _addSyntaxStyles() {
-    // Add sparqlTheme if not already present
-    if (!document.getElementById('sparql-theme-styles')) {
-      const style = document.createElement('style')
-      style.id = 'sparql-theme-styles'
-      style.textContent = sparqlTheme
-      document.head.appendChild(style)
-    }
   }
 
   /**
