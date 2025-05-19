@@ -16,7 +16,8 @@ describe('DatasetUtils', () => {
 
     describe('parseTurtle', () => {
         it('should parse valid Turtle content', async () => {
-            const turtle = `@prefix ex: <http://example.org/> .\nex:subject ex:predicate ex:object .`
+            const turtle = `@prefix ex: <http://example.org/> .
+                       ex:subject ex:predicate ex:object .`
             const dataset = await DatasetUtils.parseTurtle(turtle)
             expect(dataset).toBeDefined()
             expect(dataset.size).toBe(1)
