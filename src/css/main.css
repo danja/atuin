@@ -373,3 +373,44 @@ header {
 .license-badge:hover, .github-badge:hover {
   opacity: 0.8;
 }
+
+/* Message Queue Styles */
+#message-queue {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  display: flex;
+  flex-direction: column-reverse; /* New messages appear at the bottom and push older ones up */
+  align-items: flex-end;
+  gap: 10px;
+  z-index: 10000; /* Ensure it's above most other content */
+}
+
+.message {
+  padding: 10px 15px;
+  border-radius: 5px;
+  color: #fff;
+  font-size: 14px;
+  min-width: 250px;
+  max-width: 400px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  opacity: 1;
+  transition: opacity 0.5s ease-out;
+}
+
+.message.info {
+  background-color: #007bff; /* A distinct info color */
+}
+
+.message.success {
+  background-color: var(--primary-color);
+}
+
+.message.warning {
+  background-color: #ffc107; /* Bootstrap warning yellow */
+  color: #333; /* Darker text for yellow background */
+}
+
+.message.error {
+  background-color: #d9534f; /* Existing .btn-danger color */
+}

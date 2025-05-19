@@ -221,6 +221,17 @@ export class GraphVisualizer {
 
     this.network = new Network(this.container, data, options)
 
+    // Add a delay to let the container resize properly before fitting
+    setTimeout(() => {
+      this.network.fit({
+        animation: {
+          duration: 1000,
+          easingFunction: 'easeOutQuint'
+        },
+        scale: 0.75 // Set a more reasonable initial zoom level
+      })
+    }, 300)
+
     this.network.on('click', this._handleNetworkClick.bind(this))
 
     this.logger.debug('Graph visualizer initialized')
@@ -743,6 +754,62 @@ export class GraphVisualizer {
   }
 
   getEdges() {
-    return this.edges.get()
+    return this.edges
+  }
+  
+  /**
+   * Resizes and fits the network visualization to the container
+   * Helpful when the container size changes (like when tabs are switched)
+   */
+  resizeAndFit() {
+    if (this.network) {
+      this.network.redraw()
+      this.network.fit({
+        animation: {
+          duration: 500,
+          easingFunction: 'easeOutQuint'
+        },
+        scale: 0.75 // Set a consistent zoom level
+      })
+    }
+  }
+  
+  /**
+   * Set the size of all nodes in the network
+   * @param {number} size - The size to set for all nodes
+   */
+  setNodeSize(size) {
+    if (!this.network || !this.nodes) return
+    
+    // Store the global node size setting for future nodes
+    this.nodeSize = size
+    
+    // Update all existing nodes
+    const allNodes = this.nodes.get()
+    const updates = []
+    
+    for (const node of allNodes) {
+      // Create a deep copy of the node to avoid reference issues
+      const nodeCopy = {...node}
+      // Set the size directly on the node object
+      nodeCopy.size = size
+      // For box-shaped nodes, also set width and height
+      if (node.shape === 'box' || node.shape === 'box') {
+        nodeCopy.width = size * 2.5
+        nodeCopy.height = size * 1.5
+      }
+      updates.push(nodeCopy)
+    }
+    
+    // Update all nodes in a single batch operation
+    if (updates.length > 0) {
+      this.nodes.update(updates)
+      // Redraw the network to apply changes
+      setTimeout(() => {
+        this.network.redraw()
+      }, 50)
+    }
+    
+    return true
   }
 }

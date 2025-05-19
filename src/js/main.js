@@ -4,6 +4,8 @@ import { GraphVisualizer } from './core/GraphVisualizer.js'
 import { LoggerService } from './services/LoggerService.js'
 import { UIManager } from './ui/UIManager.js'
 import { SplitPaneManager } from './ui/SplitPaneManager.js'
+import { SettingsManager } from './ui/SettingsManager.js';
+import { SparqlService } from './core/SparqlService.js';
 
 import '../css/main.css'
 import '../css/editor.css'
@@ -75,7 +77,10 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Initialize logger
-  const logger = new LoggerService('message-queue')
+  const logger = new LoggerService('message-queue');
+
+  // Initialize SparqlService
+  const sparqlService = new SparqlService();
 
   // Get the editor and graph container elements
   const editorElement = document.getElementById('input-contents')
@@ -85,8 +90,16 @@ document.addEventListener('DOMContentLoaded', () => {
   const tabTurtle = document.getElementById('tab-turtle')
   const tabSparql = document.getElementById('tab-sparql')
   const graphElement = document.getElementById('graph-container')
+  
+  // Get the right panel tab elements
+  const viewPane = document.getElementById('view-pane')
+  const settingsPane = document.getElementById('settings-pane')
+  const tabView = document.getElementById('tab-view')
+  const tabSettings = document.getElementById('tab-settings')
+  const rightPanel = document.getElementById('right-panel')
 
-  if (!editorElement || !sparqlElement || !turtlePane || !sparqlPane || !tabTurtle || !tabSparql || !graphElement) {
+  if (!editorElement || !sparqlElement || !turtlePane || !sparqlPane || !tabTurtle || !tabSparql || 
+      !graphElement || !viewPane || !settingsPane || !tabView || !tabSettings || !rightPanel) {
     console.error("Required DOM elements not found")
     return
   }
@@ -101,8 +114,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const sparqlEditor = new SPARQLEditor(sparqlElement, logger)
   sparqlEditor.initialize()
 
-  // Tab switching logic
-  function activateTab(tab) {
+  // Tab switching logic for editor (left side)
+  function activateEditorTab(tab) {
     if (tab === 'turtle') {
       tabTurtle.classList.add('active')
       tabSparql.classList.remove('active')
@@ -119,11 +132,48 @@ document.addEventListener('DOMContentLoaded', () => {
       tabSparql.style.borderBottom = '2px solid #0074D9'
     }
   }
-  tabTurtle.addEventListener('click', () => activateTab('turtle'))
-  tabSparql.addEventListener('click', () => activateTab('sparql'))
+  
+  // Tab switching logic for right panel
+  function activateRightPanelTab(tab) {
+    if (tab === 'view') {
+      tabView.classList.add('active')
+      tabSettings.classList.remove('active')
+      viewPane.style.display = ''
+      settingsPane.style.display = 'none'
+      tabView.style.borderBottom = '2px solid #0074D9'
+      tabSettings.style.borderBottom = 'none'
+    } else {
+      tabView.classList.remove('active')
+      tabSettings.classList.add('active')
+      viewPane.style.display = 'none'
+      settingsPane.style.display = ''
+      tabView.style.borderBottom = 'none'
+      tabSettings.style.borderBottom = '2px solid #0074D9'
+    }
+  }
+  
+  // Add event listeners for tab switching
+  tabTurtle.addEventListener('click', () => activateEditorTab('turtle'))
+  tabSparql.addEventListener('click', () => activateEditorTab('sparql'))
+  tabView.addEventListener('click', () => {
+    activateRightPanelTab('view')
+    // When switching to view tab, refresh the graph visualization
+    setTimeout(() => {
+      visualizer.resizeAndFit()
+    }, 50)
+  })
+  tabSettings.addEventListener('click', () => activateRightPanelTab('settings'))
+  
+  // Handle window resize to ensure graph visualization fits properly
+  window.addEventListener('resize', () => {
+    if (tabView.classList.contains('active')) {
+      visualizer.resizeAndFit()
+    }
+  })
 
-  // Initial state: Turtle tab active
-  activateTab('turtle')
+  // Initial state: Turtle tab and View tab active
+  activateEditorTab('turtle')
+  activateRightPanelTab('view')
 
   // Set sample content in both editors
   editor.setValue(sampleContent)
@@ -139,6 +189,20 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log("Editor content changed, updating graph...")
     visualizer.updateGraph(content)
   })
+  
+  // Initialize the settings manager
+  console.log("Initializing settings manager...")
+  const settingsManager = new SettingsManager({
+    visualizer,
+    editor,
+    sparqlEditor,
+    logger
+  })
+  
+  // Apply initial settings
+  setTimeout(() => {
+    settingsManager.applyAllSettings()
+  }, 500)
 
   // Connect graph node selection to editor highlighting
   visualizer.onNodeSelect((nodeId) => {
@@ -148,16 +212,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Initialize UI manager
   const uiManager = new UIManager({
-    editor,
-    visualizer,
-    logger
+    editor: editor,
+    sparqlEditor: sparqlEditor, // Added SPARQLEditor instance
+    visualizer: visualizer,
+    logger: logger,
+    settingsManager: settingsManager,
+    sparqlService: sparqlService
   })
 
   // Initialize split pane manager
   const splitPane = new SplitPaneManager({
     container: document.querySelector('.split-container'),
     leftPane: document.getElementById('editor-container'),
-    rightPane: document.getElementById('graph-container'),
+    rightPane: document.getElementById('right-panel'),
     divider: document.getElementById('divider')
   })
 

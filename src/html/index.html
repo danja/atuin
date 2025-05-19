@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="css/main.css">
   <link rel="stylesheet" href="css/editor.css">
   <link rel="stylesheet" href="css/graph.css">
+  <link rel="stylesheet" href="css/settings.css">
 </head>
 
 <body>
@@ -74,11 +75,71 @@
     </div>
     <div id="sparql-editor-pane" style="display:none;">
       <textarea id="sparql-contents" placeholder="Enter SPARQL query here"></textarea>
+      <div id="sparql-toolbar" class="editor-toolbar">
+        <button id="run-sparql-query" class="btn btn-primary">Run</button>
+      </div>
     </div>
       </div>
       <div id="divider" class="split-divider"></div>
-      <div id="graph-container" class="split-pane">
+      <div id="right-panel" class="split-pane">
+        <div class="tab-bar" style="display: flex; border-bottom: 1px solid #ccc; margin-bottom: 4px;">
+          <button id="tab-view" class="tab active" style="flex:1; padding: 6px; border:none; background:#f7f7f7; cursor:pointer; border-bottom:2px solid #0074D9;">View</button>
+          <button id="tab-settings" class="tab" style="flex:1; padding: 6px; border:none; background:#f7f7f7; cursor:pointer;">Settings</button>
+        </div>
+        <div id="view-pane">
+          <div id="graph-container">
+            <!-- Visualization content -->
+          </div>
+        </div>
+        <div id="settings-pane" style="display:none; padding: 10px;">
+          <h3>Settings</h3>
+          <div class="settings-group">
+            <h4>SPARQL Endpoints</h4>
+            <div class="setting-item">
+              <label for="sparql-endpoint-url">Endpoint URL:</label>
+              <input type="url" id="sparql-endpoint-url" placeholder="Enter SPARQL endpoint URL" style="flex-grow: 1; margin-right: 5px;">
+              <button id="add-sparql-endpoint" class="btn">Add</button>
+            </div>
+            <div class="setting-item">
+              <label for="sparql-endpoint-select">Active Endpoint:</label>
+              <select id="sparql-endpoint-select" style="flex-grow: 1; margin-right: 5px;"></select>
+              <button id="remove-sparql-endpoint" class="btn btn-danger">Remove</button>
+            </div>
+          </div>
 
+          <div class="settings-group">
+            <h4>Visualization</h4>
+            <div class="setting-item">
+              <label for="node-size">Node Size:</label>
+              <input type="range" id="node-size" min="10" max="50" value="20" step="5">
+              <span id="node-size-value">20</span>
+            </div>
+            <div class="setting-item">
+              <label for="edge-width">Edge Width:</label>
+              <input type="range" id="edge-width" min="1" max="10" value="2">
+            </div>
+            <div class="setting-item">
+              <label for="physics-enabled">Physics:</label>
+              <input type="checkbox" id="physics-enabled" checked>
+            </div>
+          </div>
+          <div class="settings-group">
+            <h4>Editor</h4>
+            <div class="setting-item">
+              <label for="font-size">Font Size:</label>
+              <select id="font-size">
+                <option value="12">12px</option>
+                <option value="14" selected>14px</option>
+                <option value="16">16px</option>
+                <option value="18">18px</option>
+              </select>
+            </div>
+            <div class="setting-item">
+              <label for="auto-complete">Auto-Complete:</label>
+              <input type="checkbox" id="auto-complete" checked>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
     <div id="about">

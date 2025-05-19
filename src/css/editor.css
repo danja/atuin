@@ -183,6 +183,34 @@
   color: #0000ff;
 }
 
+/* SPARQL Editor Pane specific styles */
+#sparql-editor-pane {
+  position: relative; /* For absolute positioning of the toolbar */
+  height: 100%;
+  display: flex; /* Use flex to manage children */
+  flex-direction: column; /* Stack editor and toolbar vertically */
+}
+
+/* Ensure CodeMirror instance (or textarea if CM not yet init) takes up available space */
+#sparql-editor-pane .cm-editor, /* If CodeMirror is initialized */
+#sparql-contents /* Fallback for the textarea before CM init */ {
+  flex-grow: 1; /* Takes up all available vertical space */
+  height: auto; /* Override fixed height if any */
+  overflow-y: auto; /* Allow scrolling within the editor */
+  box-sizing: border-box;
+}
+
+#sparql-toolbar {
+  height: 40px;
+  background-color: #f0f0f0;
+  border-top: 1px solid #ccc;
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  box-sizing: border-box;
+  flex-shrink: 0; /* Prevent toolbar from shrinking */
+}
+
 
 @keyframes highlight-pulse {
   0% { background-color: rgba(144, 238, 144, 0.3); }

@@ -2,6 +2,7 @@
  * UI Manager for handling user interface interactions
  * @module ui/UIManager
  */
+import { SparqlService } from '../core/SparqlService.js';
 
 /**
  * Manages UI interactions and binds components together
@@ -13,11 +14,17 @@ export class UIManager {
    * @param {Object} components.editor - TurtleEditor instance
    * @param {Object} components.visualizer - GraphVisualizer instance
    * @param {Object} components.logger - LoggerService instance
+   * @param {Object} components.settingsManager - SettingsManager instance
+   * @param {Object} components.sparqlService - SparqlService instance
+   * @param {Object} components.sparqlEditor - SPARQLEditor instance
    */
   constructor(components) {
-    this.editor = components.editor
-    this.visualizer = components.visualizer
-    this.logger = components.logger
+    this.editor = components.editor;
+    this.visualizer = components.visualizer;
+    this.logger = components.logger;
+    this.sparqlService = components.sparqlService;
+    this.settingsManager = components.settingsManager;
+    this.sparqlEditor = components.sparqlEditor; // Added SPARQLEditor instance
 
     this.state = {
       syntaxCheck: 'pending',
@@ -59,14 +66,22 @@ export class UIManager {
       dialog: document.getElementById('dialog'),
       dialogYesButton: document.getElementById('dialog-yes'),
       dialogNoButton: document.getElementById('dialog-no'),
-      dialogCancelButton: document.getElementById('dialog-cancel')
+      dialogCancelButton: document.getElementById('dialog-cancel'),
+
+      // SPARQL Editor Toolbar
+      runSparqlQueryButton: document.getElementById('run-sparql-query')
     }
 
     // Set up event listeners
     this._setupEventListeners()
 
     // Log initialization
-    this.logger.debug('UI Manager initialized')
+    this.logger.debug('UI Manager initialized');
+
+    // Check if settingsManager is provided
+    if (!this.settingsManager) {
+        this.logger.error('SettingsManager not provided to UIManager. SPARQL execution might fail.');
+    }
   }
 
   /**
@@ -93,7 +108,14 @@ export class UIManager {
     // Confirmation dialog
     this.elements.dialogYesButton.addEventListener('click', () => this._handleDialogResponse(true))
     this.elements.dialogNoButton.addEventListener('click', () => this._handleDialogResponse(false))
-    this.elements.dialogCancelButton.addEventListener('click', () => this._handleDialogCancel())
+    this.elements.dialogCancelButton.addEventListener('click', () => this._handleDialogCancel());
+
+    // SPARQL Toolbar
+    if (this.elements.runSparqlQueryButton) {
+      this.elements.runSparqlQueryButton.addEventListener('click', this._handleRunSparqlQuery.bind(this));
+    } else {
+      this.logger.warn('Run SPARQL Query button not found during listener setup.');
+    }
   }
 
   /**
@@ -287,6 +309,87 @@ export class UIManager {
     }
 
     this.dialogCallback = callback
+  }
+
+  /**
+   * Display a temporary message to the user.
+   * @param {string} message - The message to display.
+   * @param {string} [type='info'] - The type of message (e.g., 'info', 'success', 'warning', 'error').
+   * @param {number} [duration=3000] - How long to display the message in milliseconds.
+   */
+  showMessage(message, type = 'info', duration = 3000) {
+    const messageQueue = document.getElementById('message-queue');
+    if (!messageQueue) {
+      this.logger.warn('Message queue element not found.');
+      console.log(`Message (${type}): ${message}`); // Fallback to console
+      return;
+    }
+
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `message ${type}`;
+    messageDiv.textContent = message;
+
+    messageQueue.appendChild(messageDiv);
+
+    // Automatically remove the message after the duration
+    setTimeout(() => {
+      messageDiv.style.opacity = '0'; // Start fade out
+      setTimeout(() => {
+        if (messageDiv.parentNode === messageQueue) { // Check if still child, might have been cleared
+            messageQueue.removeChild(messageDiv);
+        }
+      }, 500); // CSS transition duration
+    }, duration);
+  }
+
+  /**
+   * Handle Run SPARQL Query button click
+   * @private
+   */
+  _handleRunSparqlQuery() {
+    const sparqlQuery = this.sparqlEditor ? this.sparqlEditor.getValue() : ''; 
+
+    if (!this.settingsManager) {
+        this.logger.error('SettingsManager is not available in UIManager.');
+        this.showMessage('Configuration error: SettingsManager not found.', 'error');
+        return;
+    }
+    const activeEndpoint = this.settingsManager.getActiveSparqlEndpoint();
+
+    if (!activeEndpoint) {
+      this.logger.warn('No active SPARQL endpoint selected. Please select one in Settings.');
+      this.showMessage('No active SPARQL endpoint. Select one in Settings.', 'warning');
+      return;
+    }
+
+    if (!sparqlQuery || sparqlQuery.trim() === '') {
+      this.logger.warn('SPARQL query is empty.');
+      this.showMessage('SPARQL query is empty.', 'warning');
+      return;
+    }
+
+    this.logger.info(`Running SPARQL query on endpoint: ${activeEndpoint}`);
+    this.logger.debug(`Query:\n${sparqlQuery}`);
+
+    this.showMessage(`Executing query on ${activeEndpoint}...`, 'info');
+
+    if (this.sparqlService && typeof this.sparqlService.executeQuery === 'function') {
+      this.sparqlService.executeQuery(sparqlQuery, activeEndpoint)
+        .then(results => {
+          this.logger.info('SPARQL query executed successfully.');
+          this.logger.debug('Results:', results);
+          // TODO: Process and display results in a more structured way (e.g., a table)
+          this.showMessage('Query successful! (Results in console)', 'success');
+          console.log('SPARQL Results:', results); // Log results for now
+        })
+        .catch(error => {
+          this.logger.error('SPARQL query execution failed:', error);
+          this.showMessage(`Query failed: ${error.message || 'Unknown error'}`, 'error');
+        });
+    } else {
+      this.logger.error('SparqlService is not available in UIManager or executeQuery is not a function.');
+      this.showMessage('SPARQL execution service not configured or unavailable.', 'error');
+    }
   }
 
   /**
