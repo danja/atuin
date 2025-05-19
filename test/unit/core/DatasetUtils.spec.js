@@ -28,14 +28,17 @@ describe('DatasetUtils', () => {
         })
 
         it('should throw on invalid Turtle content', async () => {
-            const invalidTurtle = `@prefix ex: <http://example.org/> .\nex:subject ex:predicate . # Missing object`
-            let error
+            const invalidTurtle = `@prefix ex: <http://example.org/> .\nex:subject ex:predicate . # Missing object`;
+            let error;
+            const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {}); // Suppress output
             try {
-                await DatasetUtils.parseTurtle(invalidTurtle)
+                await DatasetUtils.parseTurtle(invalidTurtle);
             } catch (e) {
-                error = e
+                error = e;
             }
-            expect(error).toBeDefined()
+            expect(error).toBeDefined();
+            expect(consoleErrorSpy).toHaveBeenCalled(); // Optionally ensure it was called
+            consoleErrorSpy.mockRestore();
         })
     })
 })
