@@ -64,8 +64,17 @@
     </div>
 
     <div class="split-container">
-      <div id="editor-container" class="split-pane">
-        <textarea id="input-contents" placeholder="Enter Turtle RDF content here"></textarea>
+  <div id="editor-container" class="split-pane">
+    <div class="tab-bar" style="display: flex; border-bottom: 1px solid #ccc; margin-bottom: 4px;">
+      <button id="tab-turtle" class="tab active" style="flex:1; padding: 6px; border:none; background:#f7f7f7; cursor:pointer; border-bottom:2px solid #0074D9;">Turtle</button>
+      <button id="tab-sparql" class="tab" style="flex:1; padding: 6px; border:none; background:#f7f7f7; cursor:pointer;">SPARQL</button>
+    </div>
+    <div id="turtle-editor-pane">
+      <textarea id="input-contents" placeholder="Enter Turtle RDF content here"></textarea>
+    </div>
+    <div id="sparql-editor-pane" style="display:none;">
+      <textarea id="sparql-contents" placeholder="Enter SPARQL query here"></textarea>
+    </div>
       </div>
       <div id="divider" class="split-divider"></div>
       <div id="graph-container" class="split-pane">

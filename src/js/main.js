@@ -1,4 +1,5 @@
 import { TurtleEditor } from './core/TurtleEditor.js'
+import { SPARQLEditor } from './core/SPARQLEditor.js'
 import { GraphVisualizer } from './core/GraphVisualizer.js'
 import { LoggerService } from './services/LoggerService.js'
 import { UIManager } from './ui/UIManager.js'
@@ -50,6 +51,18 @@ ex:jane a ex:Person ;
   ex:knows ex:john .
 `
 
+// Sample SPARQL query for initial loading
+const sampleSparql = `PREFIX ex: <http://example.org/>
+SELECT ?person ?name ?age WHERE {
+  ?person a ex:Person ;
+          ex:name ?name ;
+          ex:age ?age .
+  FILTER(?age > 25)
+}
+ORDER BY ?name
+`
+
+
 // Initialize the application when the DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
   console.log("Initializing Atuin...")
@@ -66,9 +79,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Get the editor and graph container elements
   const editorElement = document.getElementById('input-contents')
+  const sparqlElement = document.getElementById('sparql-contents')
+  const turtlePane = document.getElementById('turtle-editor-pane')
+  const sparqlPane = document.getElementById('sparql-editor-pane')
+  const tabTurtle = document.getElementById('tab-turtle')
+  const tabSparql = document.getElementById('tab-sparql')
   const graphElement = document.getElementById('graph-container')
 
-  if (!editorElement || !graphElement) {
+  if (!editorElement || !sparqlElement || !turtlePane || !sparqlPane || !tabTurtle || !tabSparql || !graphElement) {
     console.error("Required DOM elements not found")
     return
   }
@@ -77,6 +95,39 @@ document.addEventListener('DOMContentLoaded', () => {
   console.log("Initializing editor...")
   const editor = new TurtleEditor(editorElement, logger)
   editor.initialize()
+
+  // Initialize the SPARQL editor
+  console.log("Initializing SPARQL editor...")
+  const sparqlEditor = new SPARQLEditor(sparqlElement, logger)
+  sparqlEditor.initialize()
+
+  // Tab switching logic
+  function activateTab(tab) {
+    if (tab === 'turtle') {
+      tabTurtle.classList.add('active')
+      tabSparql.classList.remove('active')
+      turtlePane.style.display = ''
+      sparqlPane.style.display = 'none'
+      tabTurtle.style.borderBottom = '2px solid #0074D9'
+      tabSparql.style.borderBottom = 'none'
+    } else {
+      tabTurtle.classList.remove('active')
+      tabSparql.classList.add('active')
+      turtlePane.style.display = 'none'
+      sparqlPane.style.display = ''
+      tabTurtle.style.borderBottom = 'none'
+      tabSparql.style.borderBottom = '2px solid #0074D9'
+    }
+  }
+  tabTurtle.addEventListener('click', () => activateTab('turtle'))
+  tabSparql.addEventListener('click', () => activateTab('sparql'))
+
+  // Initial state: Turtle tab active
+  activateTab('turtle')
+
+  // Set sample content in both editors
+  editor.setValue(sampleContent)
+  sparqlEditor.setValue(sampleSparql)
 
   // Initialize the graph visualizer
   console.log("Initializing graph visualizer...")
