@@ -2,7 +2,7 @@
 
 ![Build](https://github.com/danja/atuin/actions/workflows/ci.yml/badge.svg)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/danja/atuin)
+[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/10583/badge)](https://www.bestpractices.dev/projects/10583) [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/danja/atuin)
 
 # Turtle RDF Editor
 
