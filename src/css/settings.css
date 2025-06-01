@@ -7,8 +7,9 @@
   scrollbar-color: #aaa #f0f0f0; /* Firefox */
 }
 
-/* File upload button styles */
-#load-file-btn {
+/* File control buttons */
+#load-file-btn,
+#save-file-btn {
   padding: 6px 12px;
   background-color: #f0f0f0;
   border: 1px solid #ccc;
@@ -21,11 +22,13 @@
   transition: background-color 0.2s;
 }
 
-#load-file-btn:hover {
+#load-file-btn:hover,
+#save-file-btn:hover {
   background-color: #e0e0e0;
 }
 
-#load-file-btn .icon {
+#load-file-btn .icon,
+#save-file-btn .icon {
   font-size: 16px;
 }
 

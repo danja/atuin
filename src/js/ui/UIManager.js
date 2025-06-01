@@ -74,6 +74,14 @@ export class UIManager {
       // File controls
       loadFileInput: document.getElementById('load-file'),
       loadFileButton: document.getElementById('load-file-btn'),
+      saveFileButton: document.getElementById('save-file-btn'),
+      
+      // Editor elements
+      turtleEditor: document.getElementById('input-contents'),
+      sparqlEditor: document.getElementById('sparql-contents'),
+      turtleTab: document.getElementById('tab-turtle'),
+      sparqlTab: document.getElementById('tab-sparql'),
+      
 
       // View Pane Content
       graphContainer: document.getElementById('graph-container'),
@@ -86,6 +94,10 @@ export class UIManager {
     
     // Set up file handling
     this._setupFileHandling();
+    
+    // Track active editor
+    this.activeEditor = 'turtle';
+    this._setupActiveEditorTracking();
 
     // Log initialization
     this.logger.debug('UI Manager initialized');
@@ -150,6 +162,99 @@ export class UIManager {
     this.elements.loadFileButton.addEventListener('click', () => {
       this.elements.loadFileInput.click();
     });
+    
+    // Set up save button
+    this.elements.saveFileButton.addEventListener('click', () => this._handleSaveFile());
+  }
+  
+  /**
+   * Track which editor is currently active
+   * @private
+   */
+  _setupActiveEditorTracking() {
+    // Initial setup
+    this._updateActiveEditor();
+    
+    // Update on tab changes
+    this.elements.turtleTab.addEventListener('click', () => {
+      this.activeEditor = 'turtle';
+    });
+    
+    this.elements.sparqlTab.addEventListener('click', () => {
+      this.activeEditor = 'sparql';
+    });
+    
+    // Update on focus
+    this.elements.turtleEditor.addEventListener('focus', () => {
+      this.activeEditor = 'turtle';
+    });
+    
+    this.elements.sparqlEditor.addEventListener('focus', () => {
+      this.activeEditor = 'sparql';
+    });
+  }
+  
+  /**
+   * Update which editor is considered active
+   * @private
+   */
+  _updateActiveEditor() {
+    if (document.activeElement === this.elements.turtleEditor) {
+      this.activeEditor = 'turtle';
+    } else if (document.activeElement === this.elements.sparqlEditor) {
+      this.activeEditor = 'sparql';
+    } else if (this.elements.turtleTab.classList.contains('active')) {
+      this.activeEditor = 'turtle';
+    } else if (this.elements.sparqlTab.classList.contains('active')) {
+      this.activeEditor = 'sparql';
+    }
+  }
+  
+  /**
+   * Handle saving the current file
+   * @private
+   */
+  _handleSaveFile() {
+    this._updateActiveEditor();
+    
+    let content, defaultExt, type;
+    
+    if (this.activeEditor === 'turtle') {
+      content = this.editor.getValue();
+      defaultExt = 'ttl';
+      type = 'Turtle';
+    } else if (this.activeEditor === 'sparql') {
+      content = this.sparqlEditor.getValue();
+      defaultExt = 'rq';
+      type = 'SPARQL';
+    } else {
+      this._showMessage('No active editor found', 'error');
+      return;
+    }
+    
+    if (!content.trim()) {
+      this._showMessage(`${type} editor is empty`, 'warning');
+      return;
+    }
+    
+    // Create a blob with the content
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    
+    // Create a temporary anchor element to trigger the download
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `untitled.${defaultExt}`;
+    
+    // Add the anchor to the document, click it, and remove it
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    
+    // Clean up the URL object
+    URL.revokeObjectURL(url);
+    
+    this._showMessage(`${type} file saved successfully`, 'success');
   }
   
   /**
