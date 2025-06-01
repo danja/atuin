@@ -7,6 +7,68 @@
   scrollbar-color: #aaa #f0f0f0; /* Firefox */
 }
 
+/* File upload button styles */
+#load-file-btn {
+  padding: 6px 12px;
+  background-color: #f0f0f0;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-right: 8px;
+  transition: background-color 0.2s;
+}
+
+#load-file-btn:hover {
+  background-color: #e0e0e0;
+}
+
+#load-file-btn .icon {
+  font-size: 16px;
+}
+
+/* Message styles */
+#message-queue {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  z-index: 1000;
+  max-width: 300px;
+}
+
+.message {
+  padding: 10px 15px;
+  margin-bottom: 8px;
+  border-radius: 4px;
+  color: white;
+  opacity: 0.95;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  transition: opacity 0.5s ease-in-out;
+}
+
+.message.fade-out {
+  opacity: 0;
+}
+
+.message.info {
+  background-color: #2196F3;
+}
+
+.message.success {
+  background-color: #4CAF50;
+}
+
+.message.warning {
+  background-color: #FFC107;
+  color: #333;
+}
+
+.message.error {
+  background-color: #F44336;
+}
+
 #settings-pane::-webkit-scrollbar {
   width: 8px;
   height: 8px;

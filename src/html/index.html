@@ -9,6 +9,26 @@
   <link rel="stylesheet" href="css/editor.css">
   <link rel="stylesheet" href="css/graph.css">
   <link rel="stylesheet" href="css/settings.css">
+  <style>
+    .file-controls {
+      display: flex;
+      align-items: center;
+      margin-right: 10px;
+    }
+    .file-input-container {
+      position: relative;
+      display: inline-block;
+    }
+    .file-input-container input[type="file"] {
+      position: absolute;
+      left: 0;
+      top: 0;
+      opacity: 0;
+      width: 100%;
+      height: 100%;
+      cursor: pointer;
+    }
+  </style>
 </head>
 
 <body>
@@ -23,6 +43,14 @@
 
   <div class="main-container">
     <div class="toolbar">
+      <div class="file-controls">
+        <div class="file-input-container">
+          <input type="file" id="load-file" accept=".ttl,.turtle,.rq,.sparql" style="display: none;">
+          <button id="load-file-btn" class="btn" title="Load file">
+            <span class="icon">📂</span> Load File
+          </button>
+        </div>
+      </div>
       <div class="view-controls">
         <button id="split-button">Split View</button>
         <div class="toggle-group">

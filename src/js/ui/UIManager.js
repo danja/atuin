@@ -29,9 +29,9 @@ export class UIManager {
     this.state = {
       syntaxCheck: 'pending',
       isSplitView: true
-    }
+    };
 
-    this._initializeUI()
+    this._initializeUI();
   }
 
   /**
@@ -70,6 +70,10 @@ export class UIManager {
 
       // SPARQL Editor Toolbar
       runSparqlQueryButton: document.getElementById('run-sparql-query'),
+      
+      // File controls
+      loadFileInput: document.getElementById('load-file'),
+      loadFileButton: document.getElementById('load-file-btn'),
 
       // View Pane Content
       graphContainer: document.getElementById('graph-container'),
@@ -78,7 +82,10 @@ export class UIManager {
     }
 
     // Set up event listeners
-    this._setupEventListeners()
+    this._setupEventListeners();
+    
+    // Set up file handling
+    this._setupFileHandling();
 
     // Log initialization
     this.logger.debug('UI Manager initialized');
@@ -89,30 +96,107 @@ export class UIManager {
     }
   }
 
+
+  /**
+   * Set up file handling functionality
+   * @private
+   */
+  _setupFileHandling() {
+    // Handle file selection
+    this.elements.loadFileInput.addEventListener('change', (event) => {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const content = e.target.result;
+        const extension = file.name.split('.').pop().toLowerCase();
+        
+        try {
+          if (['ttl', 'turtle'].includes(extension)) {
+            // Load into Turtle editor
+            this.editor.setValue(content);
+            // Switch to Turtle tab if not already
+            document.getElementById('tab-turtle').click();
+            this.logger.info(`Loaded Turtle file: ${file.name}`);
+          } else if (['rq', 'sparql'].includes(extension)) {
+            // Load into SPARQL editor
+            this.sparqlEditor.setValue(content);
+            // Switch to SPARQL tab if not already
+            document.getElementById('tab-sparql').click();
+            this.logger.info(`Loaded SPARQL file: ${file.name}`);
+          } else {
+            throw new Error('Unsupported file type');
+          }
+        } catch (error) {
+          this.logger.error(`Error loading file: ${error.message}`);
+          // Show error to user
+          this._showMessage(`Error loading file: ${error.message}`, 'error');
+        }
+      };
+      
+      reader.onerror = () => {
+        this.logger.error('Error reading file');
+        this._showMessage('Error reading file', 'error');
+      };
+      
+      reader.readAsText(file);
+      
+      // Reset the input so the same file can be loaded again if needed
+      event.target.value = '';
+    });
+    
+    // Make the load file button trigger the file input
+    this.elements.loadFileButton.addEventListener('click', () => {
+      this.elements.loadFileInput.click();
+    });
+  }
+  
+  /**
+   * Show a message to the user
+   * @param {string} message - The message to show
+   * @param {string} type - The type of message (info, success, warning, error)
+   * @private
+   */
+  _showMessage(message, type = 'info') {
+    const messageQueue = document.getElementById('message-queue');
+    const messageEl = document.createElement('div');
+    messageEl.className = `message ${type}`;
+    messageEl.textContent = message;
+    
+    messageQueue.appendChild(messageEl);
+    
+    // Remove message after 5 seconds
+    setTimeout(() => {
+      messageEl.classList.add('fade-out');
+      setTimeout(() => messageEl.remove(), 500);
+    }, 5000);
+  }
+
   /**
    * Set up event listeners for UI elements
    * @private
    */
   _setupEventListeners() {
     // View controls
-    this.elements.splitButton.addEventListener('click', this._handleSplitView.bind(this))
-    this.elements.hideNodesCheckbox.addEventListener('change', this._handleHideNodes.bind(this))
-    this.elements.freezeCheckbox.addEventListener('change', this._handleFreeze.bind(this))
-    this.elements.clusterButton.addEventListener('click', this._handleCluster.bind(this))
-    this.elements.declusterButton.addEventListener('click', this._handleDecluster.bind(this))
+    this.elements.splitButton.addEventListener('click', this._handleSplitView.bind(this));
+    this.elements.hideNodesCheckbox.addEventListener('change', this._handleHideNodes.bind(this));
+    this.elements.freezeCheckbox.addEventListener('change', this._handleFreeze.bind(this));
+    this.elements.clusterButton.addEventListener('click', this._handleCluster.bind(this));
+    this.elements.declusterButton.addEventListener('click', this._handleDecluster.bind(this));
 
     // Syntax check state changes
     document.addEventListener('syntax-check-state-change', (event) => {
-      this._handleSyntaxCheckStateChange(event.detail.state, event.detail.error)
-    })
+      this._handleSyntaxCheckStateChange(event.detail.state, event.detail.error);
+    });
 
     // Node/Edge edit popup
-    this.elements.savePopupButton.addEventListener('click', this._handleSavePopup.bind(this))
-    this.elements.cancelPopupButton.addEventListener('click', this._handleCancelPopup.bind(this))
+    this.elements.savePopupButton.addEventListener('click', this._handleSavePopup.bind(this));
+    this.elements.cancelPopupButton.addEventListener('click', this._handleCancelPopup.bind(this));
 
     // Confirmation dialog
-    this.elements.dialogYesButton.addEventListener('click', () => this._handleDialogResponse(true))
-    this.elements.dialogNoButton.addEventListener('click', () => this._handleDialogResponse(false))
+    this.elements.dialogYesButton.addEventListener('click', () => this._handleDialogResponse(true));
+    this.elements.dialogNoButton.addEventListener('click', () => this._handleDialogResponse(false));
     this.elements.dialogCancelButton.addEventListener('click', () => this._handleDialogCancel());
 
     // SPARQL Toolbar
