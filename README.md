@@ -8,7 +8,10 @@
 
 ### [Demo](https://danja.github.io/atuin/)
 
-**Status 2025-05-20 :** I've started adding support for SPARQL, but it's not ready yet. Still haven't got around to the Turtle Save/Load.
+**Status 2025-06-01 :** Added file Load/Save. SPARQL will run against configured endpoint. Might be a little flaky.
+
+
+
 
 **If you recognise the general design or even created the logo yourself, please let me know so I can acknowledge.** Atuin is all-new code but based heavily on someone else's from years ago. Alas I forget who, and I didn't see a ref in the original code I have.
 
