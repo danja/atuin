@@ -1,8 +1,17 @@
+/* Tab panes in the right panel */
+#view-pane,
+#settings-pane {
+  height: calc(100% - 34px); /* Subtract tab bar height */
+  width: 100%;
+  overflow: auto;
+}
+
 #graph-container {
   height: 100%;
   width: 100%;
   background-color: #f9f9f9;
   position: relative;
+  display: flex;
 }
 
 /* Main network container */
