@@ -1,8 +1,41 @@
 {
   "name": "atuin",
-  "version": "1.0.0",
-  "description": "A Turtle RDF editor with graph visualization",
+  "version": "0.1.0",
+  "description": "An RDF and SPARQL editor with graph visualization",
   "type": "module",
+  "main": "./index.js",
+  "types": "./index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./index.js",
+      "types": "./index.d.ts"
+    },
+    "./core": {
+      "import": "./src/js/core/index.js",
+      "types": "./index.d.ts"
+    },
+    "./utils": {
+      "import": "./src/js/utils/index.js",
+      "types": "./src/js/utils/index.d.ts"
+    },
+    "./services": {
+      "import": "./src/js/services/index.js",
+      "types": "./index.d.ts"
+    },
+    "./ui": {
+      "import": "./src/js/ui/index.js",
+      "types": "./index.d.ts"
+    }
+  },
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "src/js/**/*.js",
+    "src/js/**/*.d.ts",
+    "dist/**/*",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "webpack --mode production",
     "dev": "webpack serve --mode development",
@@ -17,10 +50,27 @@
     "turtle",
     "editor",
     "graph",
-    "visualization"
+    "visualization",
+    "semantic-web",
+    "sparql",
+    "linked-data",
+    "rdfjs",
+    "codemirror",
+    "vis-network"
   ],
   "author": "Danny Ayers",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/danja/atuin.git"
+  },
+  "homepage": "https://danja.github.io/atuin/",
+  "bugs": {
+    "url": "https://github.com/danja/atuin/issues"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
   "dependencies": {
     "@codemirror/language": "^6.9.3",
     "@codemirror/state": "^6.4.0",
