@@ -1,31 +1,22 @@
 {
   "name": "atuin",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "An RDF and SPARQL editor with graph visualization",
   "type": "module",
   "main": "./index.js",
   "types": "./index.d.ts",
   "exports": {
-    ".": {
-      "import": "./index.js",
-      "types": "./index.d.ts"
-    },
-    "./core": {
-      "import": "./src/js/core/index.js",
-      "types": "./index.d.ts"
-    },
-    "./utils": {
-      "import": "./src/js/utils/index.js",
-      "types": "./src/js/utils/index.d.ts"
-    },
-    "./services": {
-      "import": "./src/js/services/index.js",
-      "types": "./index.d.ts"
-    },
-    "./ui": {
-      "import": "./src/js/ui/index.js",
-      "types": "./index.d.ts"
-    }
+    ".": "./index.js",
+    "./core": "./src/js/core/index.js",
+    "./core/TurtleEditor": "./src/js/core/TurtleEditor.js",
+    "./core/SPARQLEditor": "./src/js/core/SPARQLEditor.js",
+    "./core/GraphVisualizer": "./src/js/core/GraphVisualizer.js",
+    "./services": "./src/js/services/index.js",
+    "./ui": "./src/js/ui/index.js",
+    "./utils": "./src/js/utils/index.js",
+    "./css/main": "./dist/css/main.css",
+    "./css/editor": "./dist/css/editor.css",
+    "./css/graph": "./dist/css/graph.css"
   },
   "files": [
     "index.js",
