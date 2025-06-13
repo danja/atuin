@@ -107,6 +107,14 @@
       <textarea id="input-contents" placeholder="Enter Turtle RDF content here"></textarea>
     </div>
     <div id="sparql-editor-pane" style="display:none;">
+      <div id="sparql-endpoint-selector" class="endpoint-selector">
+        <label for="sparql-endpoint-quick-select">Endpoint:</label>
+        <select id="sparql-endpoint-quick-select" class="endpoint-select">
+          <option value="">No endpoints configured</option>
+        </select>
+        <button id="sparql-endpoint-add" class="btn btn-sm" title="Add new endpoint">+</button>
+        <button id="sparql-endpoint-manage" class="btn btn-sm btn-default" title="Manage endpoints">⚙</button>
+      </div>
       <textarea id="sparql-contents" placeholder="Enter SPARQL query here"></textarea>
       <div id="sparql-toolbar" class="editor-toolbar">
         <button id="run-sparql-query" class="btn btn-primary">Run</button>
@@ -258,6 +266,21 @@
       </div>
       <div class="dialog-actions">
         <button id="sparql-clips-close" class="btn btn-default">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SPARQL Endpoint Add Dialog -->
+  <div id="sparql-endpoint-add-dialog" class="dialog" style="display: none">
+    <div class="dialog-content">
+      <h3>Add SPARQL Endpoint</h3>
+      <div class="form-group">
+        <label for="sparql-endpoint-quick-url">Endpoint URL:</label>
+        <input type="url" id="sparql-endpoint-quick-url" placeholder="Enter SPARQL endpoint URL">
+      </div>
+      <div class="dialog-actions">
+        <button id="sparql-endpoint-quick-save" class="btn btn-primary">Add</button>
+        <button id="sparql-endpoint-quick-cancel" class="btn btn-default">Cancel</button>
       </div>
     </div>
   </div>

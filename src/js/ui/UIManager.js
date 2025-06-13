@@ -81,6 +81,15 @@ export class UIManager {
       sparqlClipsList: document.getElementById('sparql-clips-list'),
       sparqlClipsClose: document.getElementById('sparql-clips-close'),
 
+      // SPARQL Endpoint Selector
+      sparqlEndpointQuickSelect: document.getElementById('sparql-endpoint-quick-select'),
+      sparqlEndpointAdd: document.getElementById('sparql-endpoint-add'),
+      sparqlEndpointManage: document.getElementById('sparql-endpoint-manage'),
+      sparqlEndpointAddDialog: document.getElementById('sparql-endpoint-add-dialog'),
+      sparqlEndpointQuickUrl: document.getElementById('sparql-endpoint-quick-url'),
+      sparqlEndpointQuickSave: document.getElementById('sparql-endpoint-quick-save'),
+      sparqlEndpointQuickCancel: document.getElementById('sparql-endpoint-quick-cancel'),
+
       // SPARQL Editor Toolbar
       runSparqlQueryButton: document.getElementById('run-sparql-query'),
       storeSparqlQueryButton: document.getElementById('store-sparql-query'),
@@ -113,6 +122,9 @@ export class UIManager {
     // Track active editor
     this.activeEditor = 'turtle';
     this._setupActiveEditorTracking();
+
+    // Initialize endpoint selector
+    this._initializeEndpointSelector();
 
     // Log initialization
     this.logger.debug('UI Manager initialized');
@@ -349,6 +361,25 @@ export class UIManager {
     // SPARQL Clips Dialog
     if (this.elements.sparqlClipsClose) {
       this.elements.sparqlClipsClose.addEventListener('click', this._handleSparqlClipsClose.bind(this));
+    }
+
+    // SPARQL Endpoint Selector
+    if (this.elements.sparqlEndpointQuickSelect) {
+      this.elements.sparqlEndpointQuickSelect.addEventListener('change', this._handleEndpointQuickSelect.bind(this));
+    }
+    if (this.elements.sparqlEndpointAdd) {
+      this.elements.sparqlEndpointAdd.addEventListener('click', this._handleEndpointQuickAdd.bind(this));
+    }
+    if (this.elements.sparqlEndpointManage) {
+      this.elements.sparqlEndpointManage.addEventListener('click', this._handleEndpointManage.bind(this));
+    }
+
+    // SPARQL Endpoint Add Dialog
+    if (this.elements.sparqlEndpointQuickSave) {
+      this.elements.sparqlEndpointQuickSave.addEventListener('click', this._handleEndpointQuickSave.bind(this));
+    }
+    if (this.elements.sparqlEndpointQuickCancel) {
+      this.elements.sparqlEndpointQuickCancel.addEventListener('click', this._handleEndpointQuickCancel.bind(this));
     }
   }
 
@@ -871,6 +902,181 @@ export class UIManager {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+  }
+
+  /**
+   * Initialize the endpoint selector dropdown
+   * @private
+   */
+  _initializeEndpointSelector() {
+    if (!this.settingsManager) {
+      this.logger.warn('SettingsManager not available for endpoint selector initialization');
+      return;
+    }
+
+    this._populateEndpointSelector();
+    
+    // Set up listener for settings changes
+    document.addEventListener('sparql-endpoints-changed', () => {
+      this._populateEndpointSelector();
+    });
+  }
+
+  /**
+   * Populate the endpoint selector dropdown
+   * @private
+   */
+  _populateEndpointSelector() {
+    if (!this.elements.sparqlEndpointQuickSelect || !this.settingsManager) {
+      return;
+    }
+
+    const endpoints = this.settingsManager.sparqlEndpoints || [];
+    const activeEndpoint = this.settingsManager.getActiveSparqlEndpoint();
+    const select = this.elements.sparqlEndpointQuickSelect;
+
+    // Clear existing options
+    select.innerHTML = '';
+
+    if (endpoints.length === 0) {
+      const option = document.createElement('option');
+      option.value = '';
+      option.textContent = 'No endpoints configured';
+      option.disabled = true;
+      select.appendChild(option);
+    } else {
+      endpoints.forEach(endpoint => {
+        const option = document.createElement('option');
+        option.value = endpoint;
+        option.textContent = this._truncateUrl(endpoint, 50);
+        option.title = endpoint; // Full URL on hover
+        if (endpoint === activeEndpoint) {
+          option.selected = true;
+        }
+        select.appendChild(option);
+      });
+    }
+  }
+
+  /**
+   * Truncate URL for display
+   * @private
+   * @param {string} url - URL to truncate
+   * @param {number} maxLength - Maximum length
+   * @returns {string} Truncated URL
+   */
+  _truncateUrl(url, maxLength) {
+    if (url.length <= maxLength) {
+      return url;
+    }
+    return url.substring(0, maxLength - 3) + '...';
+  }
+
+  /**
+   * Handle endpoint selection change
+   * @private
+   */
+  _handleEndpointQuickSelect() {
+    if (!this.settingsManager) {
+      return;
+    }
+
+    const selectedEndpoint = this.elements.sparqlEndpointQuickSelect.value;
+    if (selectedEndpoint) {
+      this.settingsManager.updateActiveSparqlEndpoint(selectedEndpoint);
+      this.showMessage(`Active endpoint changed to: ${this._truncateUrl(selectedEndpoint, 40)}`, 'info');
+      this.logger.info(`Active SPARQL endpoint changed to: ${selectedEndpoint}`);
+    }
+  }
+
+  /**
+   * Handle quick add endpoint button click
+   * @private
+   */
+  _handleEndpointQuickAdd() {
+    this.elements.sparqlEndpointQuickUrl.value = '';
+    this.elements.sparqlEndpointAddDialog.style.display = 'flex';
+    this.elements.sparqlEndpointQuickUrl.focus();
+  }
+
+  /**
+   * Handle endpoint manage button click
+   * @private
+   */
+  _handleEndpointManage() {
+    // Switch to Settings tab
+    const settingsTab = document.getElementById('tab-settings');
+    if (settingsTab) {
+      settingsTab.click();
+      this.showMessage('Switched to Settings for endpoint management', 'info');
+    } else {
+      this.logger.error('Settings tab not found');
+      this.showMessage('Settings tab not available', 'error');
+    }
+  }
+
+  /**
+   * Handle endpoint quick save button click
+   * @private
+   */
+  _handleEndpointQuickSave() {
+    const url = this.elements.sparqlEndpointQuickUrl.value.trim();
+    
+    if (!url) {
+      this.showMessage('Please enter an endpoint URL', 'warning');
+      return;
+    }
+
+    if (!this.settingsManager) {
+      this.showMessage('Settings manager not available', 'error');
+      return;
+    }
+
+    try {
+      // Validate URL format
+      new URL(url);
+      
+      // Use the existing settings manager method
+      const endpoints = this.settingsManager.sparqlEndpoints || [];
+      if (endpoints.includes(url)) {
+        this.showMessage('Endpoint already exists', 'warning');
+        return;
+      }
+
+      endpoints.push(url);
+      this.settingsManager.sparqlEndpoints = endpoints;
+      this.settingsManager.saveSparqlEndpoints();
+
+      // Set as active if it's the first endpoint
+      if (endpoints.length === 1) {
+        this.settingsManager.updateActiveSparqlEndpoint(url);
+      }
+
+      // Update the dropdown
+      this._populateEndpointSelector();
+      
+      // Close dialog
+      this.elements.sparqlEndpointAddDialog.style.display = 'none';
+      
+      this.showMessage(`Endpoint added: ${this._truncateUrl(url, 40)}`, 'success');
+      this.logger.info(`SPARQL endpoint added: ${url}`);
+
+      // Trigger settings update for other components
+      document.dispatchEvent(new CustomEvent('sparql-endpoints-changed'));
+      
+    } catch (error) {
+      this.showMessage('Invalid URL format', 'error');
+      this.logger.error('Invalid endpoint URL:', url);
+    }
+  }
+
+  /**
+   * Handle endpoint quick cancel button click
+   * @private
+   */
+  _handleEndpointQuickCancel() {
+    this.elements.sparqlEndpointAddDialog.style.display = 'none';
+    this.elements.sparqlEndpointQuickUrl.value = '';
   }
 
   /**

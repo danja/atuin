@@ -219,6 +219,55 @@
   gap: 8px; /* Add spacing between buttons */
 }
 
+/* SPARQL Endpoint Selector */
+.endpoint-selector {
+  display: flex;
+  align-items: center;
+  padding: 8px 10px;
+  background-color: #f8f8f8;
+  border-bottom: 1px solid #ddd;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.endpoint-selector label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #555;
+  white-space: nowrap;
+}
+
+.endpoint-select {
+  flex-grow: 1;
+  padding: 4px 8px;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  background-color: white;
+  font-size: 13px;
+  max-width: 300px;
+}
+
+.endpoint-select:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
+}
+
+.endpoint-selector .btn {
+  padding: 4px 8px;
+  font-size: 12px;
+  min-width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.endpoint-selector .btn:hover {
+  transform: translateY(-1px);
+  transition: transform 0.1s ease;
+}
+
 
 @keyframes highlight-pulse {
   0% { background-color: rgba(144, 238, 144, 0.3); }
