@@ -4,14 +4,11 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/10583/badge)](https://www.bestpractices.dev/projects/10583) [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/danja/atuin)
 
-# Turtle RDF Editor
+# Semantic Web Syntax Editor
 
 ### [Demo](https://danja.github.io/atuin/)
 
-**Status 2025-06-01 :** Added file Load/Save. SPARQL will run against configured endpoint. Might be a little flaky.
-
-
-
+**Status 2025-06-13 :** Mostly stable, just added various bugfixes & small new features. *Nearly* ready for proper use.
 
 **If you recognise the general design or even created the logo yourself, please let me know so I can acknowledge.** Atuin is all-new code but based heavily on someone else's design from years ago. Alas I forget who, and I didn't see a ref in the original code I have.
 
