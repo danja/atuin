@@ -1,6 +1,7 @@
 // test/unit/core/SparqlService.spec.js
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { SparqlService } from '../../../src/js/core/SparqlService';
+import { eventBus, EVENTS } from 'evb';
 
 // Mock LoggerService
 const mockLogger = {
@@ -73,7 +74,10 @@ describe('SparqlService', () => {
       global.fetch.mockResolvedValue({
         ok: true,
         json: async () => mockResults,
-        text: async () => '' 
+        text: async () => '',
+        headers: {
+          get: vi.fn().mockReturnValue('application/json')
+        }
       });
 
       const results = await sparqlService.executeQuery(mockQuery, mockEndpoint);
@@ -137,12 +141,180 @@ describe('SparqlService', () => {
         global.fetch.mockResolvedValue({
             ok: true,
             json: async () => { throw notJsonError; },
-            text: async () => 'this is not json'
+            text: async () => 'this is not json',
+            headers: {
+              get: vi.fn().mockReturnValue('application/json')
+            }
         });
 
         await expect(sparqlService.executeQuery(mockQuery, mockEndpoint)).rejects.toThrow(notJsonError);
         expect(global.fetch).toHaveBeenCalledTimes(1);
         expect(mockLogger.error).toHaveBeenCalledWith('Error during SPARQL query execution:', notJsonError);
+    });
+
+    it('should handle CONSTRUCT queries with turtle content-type', async () => {
+      const constructQuery = 'CONSTRUCT { ?s ?p ?o } WHERE { ?s ?p ?o }';
+      const mockTurtleContent = '@prefix ex: <http://example.org/> .\nex:subject ex:predicate ex:object .';
+      
+      // Mock eventBus.emit
+      const eventBusSpy = vi.spyOn(eventBus, 'emit');
+      
+      global.fetch.mockResolvedValue({
+        ok: true,
+        text: async () => mockTurtleContent,
+        headers: {
+          get: vi.fn().mockReturnValue('text/turtle')
+        }
+      });
+
+      const result = await sparqlService.executeQuery(constructQuery, mockEndpoint);
+
+      expect(global.fetch).toHaveBeenCalledWith(mockEndpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Accept': 'text/turtle, application/rdf+xml, application/n-triples, text/n3, application/trig, application/rdf+json, application/sparql-results+json'
+        },
+        body: `query=${encodeURIComponent(constructQuery)}`
+      });
+      
+      expect(result).toEqual({
+        type: 'rdf',
+        content: mockTurtleContent,
+        contentType: 'text/turtle',
+        message: 'CONSTRUCT/DESCRIBE results (text/turtle) loaded into turtle editor and graph visualization'
+      });
+      
+      expect(eventBusSpy).toHaveBeenCalledWith(EVENTS.MODEL_SYNCED, mockTurtleContent);
+      expect(mockLogger.info).toHaveBeenCalledWith('SPARQL CONSTRUCT/DESCRIBE query executed successfully - routing RDF (text/turtle) to editor/graph');
+      
+      eventBusSpy.mockRestore();
+    });
+
+    it('should handle CONSTRUCT queries with various RDF content-types', async () => {
+      const constructQuery = 'CONSTRUCT { ?s ?p ?o } WHERE { ?s ?p ?o }';
+      const mockRdfContent = '<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"></rdf:RDF>';
+      
+      const testCases = [
+        'application/rdf+xml',
+        'application/n-triples', 
+        'text/n3',
+        'application/trig',
+        'application/rdf+json',
+        'text/plain'
+      ];
+
+      for (const contentType of testCases) {
+        // Reset mocks for each iteration
+        vi.clearAllMocks();
+        const eventBusSpy = vi.spyOn(eventBus, 'emit');
+        
+        global.fetch.mockResolvedValue({
+          ok: true,
+          text: async () => mockRdfContent,
+          headers: {
+            get: vi.fn().mockReturnValue(contentType)
+          }
+        });
+
+        const result = await sparqlService.executeQuery(constructQuery, mockEndpoint);
+
+        expect(result.type).toBe('rdf');
+        expect(result.content).toBe(mockRdfContent);
+        expect(result.contentType).toBe(contentType);
+        expect(eventBusSpy).toHaveBeenCalledWith(EVENTS.MODEL_SYNCED, mockRdfContent);
+        
+        eventBusSpy.mockRestore();
+      }
+    });
+
+    it('should use appropriate Accept header for CONSTRUCT queries', async () => {
+      const constructQuery = 'CONSTRUCT { ?s ?p ?o } WHERE { ?s ?p ?o }';
+      
+      global.fetch.mockResolvedValue({
+        ok: true,
+        text: async () => '',
+        headers: {
+          get: vi.fn().mockReturnValue('text/turtle')
+        }
+      });
+
+      await sparqlService.executeQuery(constructQuery, mockEndpoint);
+
+      expect(global.fetch).toHaveBeenCalledWith(mockEndpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Accept': 'text/turtle, application/rdf+xml, application/n-triples, text/n3, application/trig, application/rdf+json, application/sparql-results+json'
+        },
+        body: `query=${encodeURIComponent(constructQuery)}`
+      });
+    });
+
+    it('should use appropriate Accept header for DESCRIBE queries', async () => {
+      const describeQuery = 'DESCRIBE <http://example.org/resource>';
+      
+      global.fetch.mockResolvedValue({
+        ok: true,
+        text: async () => '',
+        headers: {
+          get: vi.fn().mockReturnValue('text/turtle')
+        }
+      });
+
+      await sparqlService.executeQuery(describeQuery, mockEndpoint);
+
+      expect(global.fetch).toHaveBeenCalledWith(mockEndpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Accept': 'text/turtle, application/rdf+xml, application/n-triples, text/n3, application/trig, application/rdf+json, application/sparql-results+json'
+        },
+        body: `query=${encodeURIComponent(describeQuery)}`
+      });
+    });
+
+    it('should log enhanced debugging information', async () => {
+      const mockQuery = 'SELECT * WHERE { ?s ?p ?o }';
+      global.fetch.mockResolvedValue({
+        ok: true,
+        json: async () => ({}),
+        headers: {
+          get: vi.fn().mockReturnValue('application/json')
+        }
+      });
+
+      await sparqlService.executeQuery(mockQuery, mockEndpoint);
+
+      expect(mockLogger.info).toHaveBeenCalledWith('Response content-type: "application/json"');
+      expect(mockLogger.info).toHaveBeenCalledWith('Query type detected: SELECT');
+      expect(mockLogger.info).toHaveBeenCalledWith('Accept header sent: application/sparql-results+json');
+    });
+  });
+  
+  describe('_isRdfContentType', () => {
+    it('should detect RDF content types correctly', () => {
+      const rdfTypes = [
+        'text/turtle',
+        'application/turtle',
+        'application/rdf+xml',
+        'application/n-triples',
+        'text/n3',
+        'application/trig',
+        'application/rdf+json',
+        'text/plain'
+      ];
+
+      rdfTypes.forEach(type => {
+        expect(sparqlService._isRdfContentType(type)).toBe(true);
+        expect(sparqlService._isRdfContentType(type.toUpperCase())).toBe(true);
+        expect(sparqlService._isRdfContentType(`${type}; charset=utf-8`)).toBe(true);
+      });
+
+      // Non-RDF types should return false
+      expect(sparqlService._isRdfContentType('application/json')).toBe(false);
+      expect(sparqlService._isRdfContentType('text/html')).toBe(false);
+      expect(sparqlService._isRdfContentType('application/xml')).toBe(false);
     });
   });
 });

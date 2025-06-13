@@ -52,13 +52,14 @@ describe('SPARQLClipsManager', () => {
       expect(clipsManager.getClipsCount()).toBeGreaterThan(0);
       
       const clips = clipsManager.getAllClips();
-      expect(clips).toHaveLength(3);
+      expect(clips).toHaveLength(4);
       
       // Check that we have the expected default clips
       const clipNames = clips.map(clip => clip.name);
       expect(clipNames).toContain('Wikidata: Countries by Population');
       expect(clipNames).toContain('Wikidata: Simple Example Query');
       expect(clipNames).toContain('Basic SELECT Query Template');
+      expect(clipNames).toContain('Wikidata: Countries RDF Graph (CONSTRUCT)');
     });
 
     it('should contain a Wikidata query with proper SPARQL syntax', () => {
@@ -94,7 +95,7 @@ describe('SPARQLClipsManager', () => {
       clipsManager = new SPARQLClipsManager(mockLogger);
       const defaultClips = clipsManager.getDefaultClips();
       
-      expect(defaultClips).toHaveLength(3);
+      expect(defaultClips).toHaveLength(4);
       
       // Check Wikidata countries query
       const countriesClip = defaultClips.find(clip => clip.name === 'Wikidata: Countries by Population');
@@ -167,8 +168,8 @@ describe('SPARQLClipsManager', () => {
       
       const allClips = manager.getAllClips();
       
-      // Should now have the existing clip plus the 3 default clips
-      expect(allClips.length).toBe(4);
+      // Should now have the existing clip plus the 4 default clips
+      expect(allClips.length).toBe(5);
       
       // Should contain both user clip and default clips
       const clipNames = allClips.map(clip => clip.name);
@@ -176,6 +177,7 @@ describe('SPARQLClipsManager', () => {
       expect(clipNames).toContain('Wikidata: Countries by Population');
       expect(clipNames).toContain('Wikidata: Simple Example Query');
       expect(clipNames).toContain('Basic SELECT Query Template');
+      expect(clipNames).toContain('Wikidata: Countries RDF Graph (CONSTRUCT)');
     });
 
     it('should not duplicate existing default clips', () => {
@@ -197,8 +199,8 @@ describe('SPARQLClipsManager', () => {
       
       const allClips = manager.getAllClips();
       
-      // Should have original clip plus the 2 missing defaults (3 total)
-      expect(allClips.length).toBe(3);
+      // Should have original clip plus the 3 missing defaults (4 total)
+      expect(allClips.length).toBe(4);
       
       // Should not duplicate the existing default
       const countriesClips = allClips.filter(clip => 

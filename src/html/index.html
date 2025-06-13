@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Atuin - Turtle RDF Editor</title>
+  <title>Atuin - SemWeb Syntax Editor</title>
   <link rel="stylesheet" href="css/main.css">
   <link rel="stylesheet" href="css/editor.css">
   <link rel="stylesheet" href="css/graph.css">
@@ -15,10 +15,12 @@
       align-items: center;
       margin-right: 10px;
     }
+
     .file-input-container {
       position: relative;
       display: inline-block;
     }
+
     .file-input-container input[type="file"] {
       position: absolute;
       left: 0;
@@ -35,7 +37,7 @@
   <header>
     <div class="logo">
       <img src="img/turtle.svg" alt="Turtle Logo" />
-      <h1>Atuin - Turtle RDF Editor</h1>
+      <h1>Atuin</h1>
 
     </div>
     <div id="message-queue"></div>
@@ -98,36 +100,40 @@
     </div>
 
     <div class="split-container">
-  <div id="editor-container" class="split-pane">
-    <div class="tab-bar" style="display: flex; border-bottom: 1px solid #ccc; margin-bottom: 4px;">
-      <button id="tab-turtle" class="tab active" style="flex:1; padding: 6px; border:none; background:#f7f7f7; cursor:pointer; border-bottom:2px solid #0074D9;">Turtle</button>
-      <button id="tab-sparql" class="tab" style="flex:1; padding: 6px; border:none; background:#f7f7f7; cursor:pointer;">SPARQL</button>
-    </div>
-    <div id="turtle-editor-pane">
-      <textarea id="input-contents" placeholder="Enter Turtle RDF content here"></textarea>
-    </div>
-    <div id="sparql-editor-pane" style="display:none;">
-      <div id="sparql-endpoint-selector" class="endpoint-selector">
-        <label for="sparql-endpoint-quick-select">Endpoint:</label>
-        <select id="sparql-endpoint-quick-select" class="endpoint-select">
-          <option value="">No endpoints configured</option>
-        </select>
-        <button id="sparql-endpoint-add" class="btn btn-sm" title="Add new endpoint">+</button>
-        <button id="sparql-endpoint-manage" class="btn btn-sm btn-default" title="Manage endpoints">⚙</button>
-      </div>
-      <textarea id="sparql-contents" placeholder="Enter SPARQL query here"></textarea>
-      <div id="sparql-toolbar" class="editor-toolbar">
-        <button id="run-sparql-query" class="btn btn-primary">Run</button>
-        <button id="store-sparql-query" class="btn btn-default">Store</button>
-        <button id="clips-sparql-query" class="btn btn-default">Clips</button>
-      </div>
-    </div>
+      <div id="editor-container" class="split-pane">
+        <div class="tab-bar" style="display: flex; border-bottom: 1px solid #ccc; margin-bottom: 4px;">
+          <button id="tab-turtle" class="tab active"
+            style="flex:1; padding: 6px; border:none; background:#f7f7f7; cursor:pointer; border-bottom:2px solid #0074D9;">Turtle</button>
+          <button id="tab-sparql" class="tab"
+            style="flex:1; padding: 6px; border:none; background:#f7f7f7; cursor:pointer;">SPARQL</button>
+        </div>
+        <div id="turtle-editor-pane">
+          <textarea id="input-contents" placeholder="Enter Turtle RDF content here"></textarea>
+        </div>
+        <div id="sparql-editor-pane" style="display:none;">
+          <div id="sparql-endpoint-selector" class="endpoint-selector">
+            <label for="sparql-endpoint-quick-select">Endpoint:</label>
+            <select id="sparql-endpoint-quick-select" class="endpoint-select">
+              <option value="">No endpoints configured</option>
+            </select>
+            <button id="sparql-endpoint-add" class="btn btn-sm" title="Add new endpoint">+</button>
+            <button id="sparql-endpoint-manage" class="btn btn-sm btn-default" title="Manage endpoints">⚙</button>
+          </div>
+          <textarea id="sparql-contents" placeholder="Enter SPARQL query here"></textarea>
+          <div id="sparql-toolbar" class="editor-toolbar">
+            <button id="run-sparql-query" class="btn btn-primary">Run</button>
+            <button id="store-sparql-query" class="btn btn-default">Store</button>
+            <button id="clips-sparql-query" class="btn btn-default">Clips</button>
+          </div>
+        </div>
       </div>
       <div id="divider" class="split-divider"></div>
       <div id="right-panel" class="split-pane">
         <div class="tab-bar" style="display: flex; border-bottom: 1px solid #ccc; margin-bottom: 4px;">
-          <button id="tab-view" class="tab active" style="flex:1; padding: 6px; border:none; background:#f7f7f7; cursor:pointer; border-bottom:2px solid #0074D9;">View</button>
-          <button id="tab-settings" class="tab" style="flex:1; padding: 6px; border:none; background:#f7f7f7; cursor:pointer;">Settings</button>
+          <button id="tab-view" class="tab active"
+            style="flex:1; padding: 6px; border:none; background:#f7f7f7; cursor:pointer; border-bottom:2px solid #0074D9;">View</button>
+          <button id="tab-settings" class="tab"
+            style="flex:1; padding: 6px; border:none; background:#f7f7f7; cursor:pointer;">Settings</button>
         </div>
         <div id="view-pane">
           <div id="graph-container">
@@ -146,7 +152,8 @@
             <h4>SPARQL Endpoints</h4>
             <div class="setting-item">
               <label for="sparql-endpoint-url">Endpoint URL:</label>
-              <input type="url" id="sparql-endpoint-url" placeholder="Enter SPARQL endpoint URL" style="flex-grow: 1; margin-right: 5px;">
+              <input type="url" id="sparql-endpoint-url" placeholder="Enter SPARQL endpoint URL"
+                style="flex-grow: 1; margin-right: 5px;">
               <button id="add-sparql-endpoint" class="btn">Add</button>
             </div>
             <div class="setting-item">

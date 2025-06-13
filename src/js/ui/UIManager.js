@@ -471,6 +471,46 @@ export class UIManager {
     // Clear previous results
     this.elements.sparqlResultsTableWrapper.innerHTML = '';
 
+    // Handle CONSTRUCT/DESCRIBE queries that return turtle data
+    if (data && data.type === 'turtle') {
+      this.logger.debug('Displaying turtle results from CONSTRUCT/DESCRIBE query');
+      
+      const turtleResultDiv = document.createElement('div');
+      turtleResultDiv.className = 'turtle-results';
+      
+      const messageDiv = document.createElement('div');
+      messageDiv.className = 'turtle-message';
+      messageDiv.textContent = data.message || 'Results loaded into turtle editor and graph visualization';
+      
+      const contentDiv = document.createElement('div');
+      contentDiv.className = 'turtle-content';
+      
+      const pre = document.createElement('pre');
+      const code = document.createElement('code');
+      code.textContent = data.content || '';
+      code.className = 'turtle-code';
+      pre.appendChild(code);
+      contentDiv.appendChild(pre);
+      
+      turtleResultDiv.appendChild(messageDiv);
+      turtleResultDiv.appendChild(contentDiv);
+      this.elements.sparqlResultsTableWrapper.appendChild(turtleResultDiv);
+      
+      // Show results, hide graph temporarily to show the turtle content
+      this.elements.graphContainer.style.display = 'none';
+      this.elements.sparqlResultsContainer.style.display = '';
+      
+      // Auto-hide results after 3 seconds and show graph with new data
+      setTimeout(() => {
+        this.elements.sparqlResultsContainer.style.display = 'none';
+        this.elements.graphContainer.style.display = '';
+        this.logger.info('Switched back to graph view to show CONSTRUCT results');
+      }, 3000);
+      
+      return;
+    }
+
+    // Handle SELECT/ASK queries that return JSON data
     if (!data || !data.results || !data.results.bindings || data.results.bindings.length === 0) {
       const noResultsMessage = document.createElement('p');
       noResultsMessage.textContent = 'No results found for the query.';

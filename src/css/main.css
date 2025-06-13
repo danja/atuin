@@ -467,6 +467,49 @@ header {
   background-color: #e2e2e2;
 }
 
+/* Turtle Results Styles for CONSTRUCT/DESCRIBE queries */
+.turtle-results {
+  padding: 15px;
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  margin-bottom: 10px;
+}
+
+.turtle-message {
+  background-color: #d1ecf1;
+  color: #0c5460;
+  padding: 10px 15px;
+  border: 1px solid #bee5eb;
+  border-radius: 4px;
+  margin-bottom: 15px;
+  font-weight: 500;
+}
+
+.turtle-content {
+  background-color: #ffffff;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  max-height: 400px;
+  overflow: auto;
+}
+
+.turtle-content pre {
+  margin: 0;
+  padding: 15px;
+  background-color: transparent;
+  border: none;
+}
+
+.turtle-code {
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 13px;
+  line-height: 1.4;
+  color: #333;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
 /* SPARQL Clips Dialog Styles */
 #sparql-clips-list {
   max-height: 300px;

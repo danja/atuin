@@ -114,6 +114,38 @@ SELECT ?subject ?predicate ?object WHERE {
 LIMIT 100`,
         timestamp: timestamp - 3000,
         created: new Date(timestamp - 3000).toISOString()
+      },
+      {
+        id: 'default_wikidata_construct',
+        name: 'Wikidata: Countries RDF Graph (CONSTRUCT)',
+        query: `# CONSTRUCT query to create RDF graph of countries with population data
+# Returns turtle/RDF format - will be loaded into turtle editor and visualization
+# Wikidata SPARQL query - works with https://query.wikidata.org/sparql
+
+PREFIX ex: <http://example.org/>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+CONSTRUCT {
+  ?country rdf:type ex:Country ;
+           ex:population ?population ;
+           ex:hasPopulationStatement ?populationStatement ;
+           ex:wikidataId ?country .
+  
+  ?populationStatement rdf:type ex:PopulationStatement ;
+                      ex:value ?population .
+}
+WHERE {
+  ?country wdt:P31 wd:Q3624078 .  # sovereign state
+  ?country p:P1082 ?populationStatement .
+  ?populationStatement ps:P1082 ?population .
+  
+  FILTER(?population > 1000000)  # Countries with >1M population
+}
+ORDER BY DESC(?population)
+LIMIT 20`,
+        timestamp: timestamp - 4000,
+        created: new Date(timestamp - 4000).toISOString()
       }
     ];
   }
