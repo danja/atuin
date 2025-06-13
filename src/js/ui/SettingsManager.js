@@ -1,6 +1,8 @@
 /**
  * Manages application settings and preferences
  */
+import { eventBus, EVENTS } from 'evb';
+
 export class SettingsManager {
   /**
    * Initialize the settings manager
@@ -329,6 +331,12 @@ export class SettingsManager {
     this.populateSparqlEndpointSelect();
     this.controls.sparqlEndpointUrl.value = ''; // Clear input field
     this.logger.info(`SPARQL endpoint added: ${url}`);
+    
+    // Notify other components that endpoints have changed
+    eventBus.emit(EVENTS.ENDPOINT_UPDATED, {
+      endpoints: this.sparqlEndpoints,
+      activeEndpoint: this.activeSparqlEndpoint
+    });
   }
 
   removeSparqlEndpoint() {
@@ -350,6 +358,12 @@ export class SettingsManager {
     this.saveSparqlEndpoints();
     this.populateSparqlEndpointSelect(); 
     // The populateSparqlEndpointSelect will call saveActiveSparqlEndpoint
+    
+    // Notify other components that endpoints have changed
+    eventBus.emit(EVENTS.ENDPOINT_UPDATED, {
+      endpoints: this.sparqlEndpoints,
+      activeEndpoint: this.activeSparqlEndpoint
+    });
   }
 
   updateActiveSparqlEndpoint() {
@@ -364,6 +378,40 @@ export class SettingsManager {
          this.logger.info('Active SPARQL endpoint cleared as no endpoints are available.');
     }
     this.saveActiveSparqlEndpoint();
+    
+    // Notify other components that the active endpoint has changed
+    eventBus.emit(EVENTS.ENDPOINT_UPDATED, {
+      endpoints: this.sparqlEndpoints,
+      activeEndpoint: this.activeSparqlEndpoint
+    });
+  }
+
+  /**
+   * Set the active SPARQL endpoint directly (used by quick selector)
+   * @param {string} endpoint - The endpoint URL to set as active
+   */
+  setActiveSparqlEndpoint(endpoint) {
+    if (!endpoint || !this.sparqlEndpoints.includes(endpoint)) {
+      this.logger.warn(`Invalid endpoint: ${endpoint}`);
+      return false;
+    }
+
+    this.activeSparqlEndpoint = endpoint;
+    this.saveActiveSparqlEndpoint();
+    this.logger.info(`Active SPARQL endpoint set to: ${this.activeSparqlEndpoint}`);
+    
+    // Update the settings panel dropdown to stay in sync
+    if (this.controls.sparqlEndpointSelect) {
+      this.controls.sparqlEndpointSelect.value = endpoint;
+    }
+    
+    // Notify other components that the active endpoint has changed
+    eventBus.emit(EVENTS.ENDPOINT_UPDATED, {
+      endpoints: this.sparqlEndpoints,
+      activeEndpoint: this.activeSparqlEndpoint
+    });
+    
+    return true;
   }
 
   getActiveSparqlEndpoint() {

@@ -23,6 +23,14 @@ Atuin is a Turtle RDF editor with graph visualization built using vanilla JavaSc
 ### Core Architecture Pattern
 The application uses an event-driven architecture with the `evb` event bus library for inter-component communication. Components import `{ eventBus, EVENTS }` from 'evb' and use it for publishing/subscribing to events.
 
+#### Event Bus Usage
+Atuin uses the [evb](https://github.com/danja/evb) event bus library for loose coupling between components to simplify reuse. Key patterns:
+
+- **Publishing events**: `eventBus.emit(EVENTS.MODEL_SYNCED, content)`
+- **Subscribing to events**: `eventBus.on(EVENTS.MODEL_SYNCED, callback)`
+- **Event constants**: Use predefined constants from `EVENTS` object (e.g., `EVENTS.ENDPOINT_UPDATED`, `EVENTS.SPARQL_QUERY_COMPLETED`)
+- **Component isolation**: Components communicate through events rather than direct references, making them more modular and testable
+
 ### Key Components Structure
 - **Core**: Main functionality (TurtleEditor, SPARQLEditor, GraphVisualizer, Parser)
 - **Services**: Helper services (LoggerService, SparqlService) 

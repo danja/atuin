@@ -4,6 +4,7 @@
  */
 import { SparqlService } from '../core/SparqlService.js';
 import { SPARQLClipsManager } from '../services/SPARQLClipsManager.js';
+import { eventBus, EVENTS } from 'evb';
 
 /**
  * Manages UI interactions and binds components together
@@ -956,8 +957,8 @@ export class UIManager {
 
     this._populateEndpointSelector();
     
-    // Set up listener for settings changes
-    document.addEventListener('sparql-endpoints-changed', () => {
+    // Set up listener for settings changes using event bus
+    eventBus.on(EVENTS.ENDPOINT_UPDATED, () => {
       this._populateEndpointSelector();
     });
   }
@@ -1023,7 +1024,7 @@ export class UIManager {
 
     const selectedEndpoint = this.elements.sparqlEndpointQuickSelect.value;
     if (selectedEndpoint) {
-      this.settingsManager.updateActiveSparqlEndpoint(selectedEndpoint);
+      this.settingsManager.setActiveSparqlEndpoint(selectedEndpoint);
       this.showMessage(`Active endpoint changed to: ${this._truncateUrl(selectedEndpoint, 40)}`, 'info');
       this.logger.info(`Active SPARQL endpoint changed to: ${selectedEndpoint}`);
     }
@@ -1102,7 +1103,10 @@ export class UIManager {
       this.logger.info(`SPARQL endpoint added: ${url}`);
 
       // Trigger settings update for other components
-      document.dispatchEvent(new CustomEvent('sparql-endpoints-changed'));
+      eventBus.emit(EVENTS.ENDPOINT_UPDATED, {
+        endpoints: this.settingsManager.sparqlEndpoints,
+        activeEndpoint: this.settingsManager.getActiveSparqlEndpoint()
+      });
       
     } catch (error) {
       this.showMessage('Invalid URL format', 'error');

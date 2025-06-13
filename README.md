@@ -116,6 +116,22 @@ atuin/
 - JSDoc (documentation)
 - [evb](https://github.com/danja/evb) (event bus)
 
+## Architecture
+
+### Event Bus Communication
+
+Atuin uses the [evb](https://github.com/danja/evb) event bus library for loose coupling between components to simplify reuse. This architectural pattern provides several benefits:
+
+- **Modular components**: Each component operates independently and communicates through events
+- **Easy testing**: Components can be tested in isolation with mock event handlers
+- **Flexible reuse**: Components can be reused in different contexts without modification
+- **Maintainable code**: Clear separation of concerns with event-driven communication
+
+Key event patterns used throughout the application:
+- `EVENTS.MODEL_SYNCED`: When RDF content changes in the editor
+- `EVENTS.ENDPOINT_UPDATED`: When SPARQL endpoint configuration changes  
+- `EVENTS.SPARQL_QUERY_COMPLETED`: When SPARQL queries finish execution
+
 ## Testing
 
 This project uses [Vitest](https://vitest.dev/) for unit and integration tests. To run the tests:
