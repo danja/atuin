@@ -1,6 +1,7 @@
 import { turtleTheme } from './TurtleTheme.js'
 import { EditorState } from '@codemirror/state'
-import { EditorView, lineNumbers, highlightActiveLine } from '@codemirror/view'
+import { EditorView, lineNumbers, highlightActiveLine, keymap } from '@codemirror/view'
+import { defaultKeymap } from '@codemirror/commands'
 import { RDFParser } from './Parser.js'
 import { URIUtils } from '../utils/URIUtils.js'
 import { turtle } from './TurtleMode.js'
@@ -48,6 +49,7 @@ export class TurtleEditor {
       extensions: [
         lineNumbers(),
         highlightActiveLine(),
+        keymap.of(defaultKeymap),
         turtle(),
         turtleTheme, // <-- This line was missing in the original code
         syntaxErrorHighlighter(),

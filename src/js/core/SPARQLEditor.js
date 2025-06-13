@@ -1,6 +1,7 @@
 import { sparqlTheme } from './SPARQLTheme.js'
 import { EditorState } from '@codemirror/state'
-import { EditorView, lineNumbers, highlightActiveLine } from '@codemirror/view'
+import { EditorView, lineNumbers, highlightActiveLine, keymap } from '@codemirror/view'
+import { defaultKeymap } from '@codemirror/commands'
 import { sparql } from './SPARQLMode.js'
 
 /**
@@ -29,6 +30,7 @@ export class SPARQLEditor {
       extensions: [
         lineNumbers(),
         highlightActiveLine(),
+        keymap.of(defaultKeymap),
         sparql(),
         sparqlTheme,  // Apply the theme as an extension
         EditorView.updateListener.of(update => {
