@@ -6,7 +6,7 @@
 
 # Semantic Web Syntax Editor
 
-### [Demo](https://danja.github.io/atuin/)
+## [Demo](https://danja.github.io/atuin/)
 
 **Status 2025-06-13 :** Mostly stable, just added various bugfixes & small new features. *Nearly* ready for proper use.
 
@@ -14,13 +14,14 @@
 
 *My motivation is to use it in [Semem](https://github.com/danja/semem), an agent memory thing I'm working on that will need seriously cluster-capable visualization of RDF graphs.*
 
-_The following written by my colleague ~~Claude~~ GitHub Copilot. Be warned, reality isn't their first language. Proper docs may appear in finite time._
+_The following mostly written by my colleagues Claude and GitHub Copilot. Be warned, reality isn't their first language. Proper docs may appear in finite time._
 
-Atuin is a web-based editor for Turtle RDF files with an integrated graph visualization. This modern implementation uses vanilla JavaScript with ES modules (ESM), providing a clean, modular architecture. It is tested with [Vitest](https://vitest.dev/) and uses the [evb](https://github.com/danja/evb) event bus for decoupled communication between components.
+Atuin is a web-based editor for Turtle RDF files with an integrated graph visualization, and SPARQL with the ability to query remote stores. This modern implementation uses vanilla JavaScript with ES modules (ESM), providing a clean, modular architecture. It is tested with [Vitest](https://vitest.dev/) and uses the [evb](https://github.com/danja/evb) event bus for decoupled communication between components.
 
 ## Features
 
-- Turtle syntax editing with syntax highlighting
+- Turtle & SPARQL syntax editing with syntax highlighting
+- Remote SPARQL store querying
 - Real-time RDF graph visualization
 - Visual node and edge manipulation
 - Syntax validation
@@ -40,7 +41,7 @@ Atuin is a web-based editor for Turtle RDF files with an integrated graph visual
 1. Clone this repository
 
 ```sh
-git clone https://github.com/your-username/atuin.git
+git clone https://github.com/danja/atuin.git
 cd atuin
 ```
 
@@ -48,7 +49,6 @@ cd atuin
 
 ```sh
 npm install
-npm install ../evb
 ```
 
 3. Start the development server
