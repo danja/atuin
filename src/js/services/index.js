@@ -4,3 +4,4 @@
  */
 
 export { LoggerService } from './LoggerService.js';
+export { SPARQLClipsManager } from './SPARQLClipsManager.js';

@@ -3,6 +3,7 @@
  * @module ui/UIManager
  */
 import { SparqlService } from '../core/SparqlService.js';
+import { SPARQLClipsManager } from '../services/SPARQLClipsManager.js';
 
 /**
  * Manages UI interactions and binds components together
@@ -25,6 +26,9 @@ export class UIManager {
     this.sparqlService = components.sparqlService;
     this.settingsManager = components.settingsManager;
     this.sparqlEditor = components.sparqlEditor; // Added SPARQLEditor instance
+    
+    // Initialize SPARQL Clips Manager
+    this.sparqlClipsManager = new SPARQLClipsManager(this.logger);
 
     this.state = {
       syntaxCheck: 'pending',
@@ -68,8 +72,19 @@ export class UIManager {
       dialogNoButton: document.getElementById('dialog-no'),
       dialogCancelButton: document.getElementById('dialog-cancel'),
 
+      // SPARQL Clips Dialogs
+      sparqlStoreDialog: document.getElementById('sparql-store-dialog'),
+      sparqlClipName: document.getElementById('sparql-clip-name'),
+      sparqlStoreSave: document.getElementById('sparql-store-save'),
+      sparqlStoreCancel: document.getElementById('sparql-store-cancel'),
+      sparqlClipsDialog: document.getElementById('sparql-clips-dialog'),
+      sparqlClipsList: document.getElementById('sparql-clips-list'),
+      sparqlClipsClose: document.getElementById('sparql-clips-close'),
+
       // SPARQL Editor Toolbar
       runSparqlQueryButton: document.getElementById('run-sparql-query'),
+      storeSparqlQueryButton: document.getElementById('store-sparql-query'),
+      clipsSparqlQueryButton: document.getElementById('clips-sparql-query'),
       
       // File controls
       loadFileInput: document.getElementById('load-file'),
@@ -309,6 +324,31 @@ export class UIManager {
       this.elements.runSparqlQueryButton.addEventListener('click', this._handleRunSparqlQuery.bind(this));
     } else {
       this.logger.warn('Run SPARQL Query button not found during listener setup.');
+    }
+
+    if (this.elements.storeSparqlQueryButton) {
+      this.elements.storeSparqlQueryButton.addEventListener('click', this._handleStoreSparqlQuery.bind(this));
+    } else {
+      this.logger.warn('Store SPARQL Query button not found during listener setup.');
+    }
+
+    if (this.elements.clipsSparqlQueryButton) {
+      this.elements.clipsSparqlQueryButton.addEventListener('click', this._handleClipsSparqlQuery.bind(this));
+    } else {
+      this.logger.warn('Clips SPARQL Query button not found during listener setup.');
+    }
+
+    // SPARQL Store Dialog
+    if (this.elements.sparqlStoreSave) {
+      this.elements.sparqlStoreSave.addEventListener('click', this._handleSparqlStoreSave.bind(this));
+    }
+    if (this.elements.sparqlStoreCancel) {
+      this.elements.sparqlStoreCancel.addEventListener('click', this._handleSparqlStoreCancel.bind(this));
+    }
+
+    // SPARQL Clips Dialog
+    if (this.elements.sparqlClipsClose) {
+      this.elements.sparqlClipsClose.addEventListener('click', this._handleSparqlClipsClose.bind(this));
     }
   }
 
@@ -657,6 +697,180 @@ export class UIManager {
       this.logger.error('SparqlService is not available in UIManager or executeQuery is not a function.');
       this.showMessage('SPARQL execution service not configured or unavailable.', 'error');
     }
+  }
+
+  /**
+   * Handle Store SPARQL Query button click
+   * @private
+   */
+  _handleStoreSparqlQuery() {
+    const sparqlQuery = this.sparqlEditor ? this.sparqlEditor.getValue() : '';
+    
+    if (!sparqlQuery || sparqlQuery.trim() === '') {
+      this.logger.warn('SPARQL query is empty - cannot store.');
+      this.showMessage('SPARQL query is empty. Please enter a query to store.', 'warning');
+      return;
+    }
+
+    // Show the store dialog
+    this.elements.sparqlClipName.value = '';
+    this.elements.sparqlStoreDialog.style.display = 'flex';
+    this.elements.sparqlClipName.focus();
+  }
+
+  /**
+   * Handle Store Dialog Save button click
+   * @private
+   */
+  _handleSparqlStoreSave() {
+    const name = this.elements.sparqlClipName.value.trim();
+    const sparqlQuery = this.sparqlEditor ? this.sparqlEditor.getValue() : '';
+
+    if (!name) {
+      this.showMessage('Please enter a name for the clip.', 'warning');
+      return;
+    }
+
+    try {
+      this.sparqlClipsManager.saveClip(name, sparqlQuery);
+      this.elements.sparqlStoreDialog.style.display = 'none';
+      this.showMessage(`SPARQL clip "${name}" saved successfully.`, 'success');
+      this.logger.info(`SPARQL clip saved: ${name}`);
+    } catch (error) {
+      this.logger.error('Error saving SPARQL clip:', error.message);
+      this.showMessage(error.message, 'error');
+    }
+  }
+
+  /**
+   * Handle Store Dialog Cancel button click
+   * @private
+   */
+  _handleSparqlStoreCancel() {
+    this.elements.sparqlStoreDialog.style.display = 'none';
+    this.elements.sparqlClipName.value = '';
+  }
+
+  /**
+   * Handle Clips SPARQL Query button click
+   * @private
+   */
+  _handleClipsSparqlQuery() {
+    this._showClipsDialog();
+  }
+
+  /**
+   * Show the SPARQL clips dialog and populate with clips
+   * @private
+   */
+  _showClipsDialog() {
+    const clips = this.sparqlClipsManager.getAllClips();
+    const clipsList = this.elements.sparqlClipsList;
+    
+    // Clear existing content
+    clipsList.innerHTML = '';
+
+    if (clips.length === 0) {
+      clipsList.innerHTML = '<div class="sparql-clips-empty">No SPARQL clips saved yet.</div>';
+    } else {
+      clips.forEach(clip => {
+        const clipElement = this._createClipElement(clip);
+        clipsList.appendChild(clipElement);
+      });
+    }
+
+    this.elements.sparqlClipsDialog.style.display = 'flex';
+  }
+
+  /**
+   * Create a DOM element for a SPARQL clip
+   * @private
+   * @param {Object} clip - Clip object
+   * @returns {HTMLElement} Clip element
+   */
+  _createClipElement(clip) {
+    const clipDiv = document.createElement('div');
+    clipDiv.className = 'sparql-clip-item';
+
+    const preview = clip.query.length > 60 ? clip.query.substring(0, 60) + '...' : clip.query;
+    
+    clipDiv.innerHTML = `
+      <div class="sparql-clip-info">
+        <div class="sparql-clip-name">${this._escapeHtml(clip.name)}</div>
+        <div class="sparql-clip-preview">${this._escapeHtml(preview)}</div>
+      </div>
+      <div class="sparql-clip-actions">
+        <button class="btn btn-primary btn-sm" data-action="load" data-clip-id="${clip.id}">Load</button>
+        <button class="btn btn-danger btn-sm" data-action="delete" data-clip-id="${clip.id}">Delete</button>
+      </div>
+    `;
+
+    // Add event listeners for the buttons
+    const loadButton = clipDiv.querySelector('[data-action="load"]');
+    const deleteButton = clipDiv.querySelector('[data-action="delete"]');
+
+    loadButton.addEventListener('click', () => this._loadClip(clip.id));
+    deleteButton.addEventListener('click', () => this._deleteClip(clip.id));
+
+    return clipDiv;
+  }
+
+  /**
+   * Load a SPARQL clip into the editor
+   * @private
+   * @param {string} clipId - Clip ID
+   */
+  _loadClip(clipId) {
+    const clip = this.sparqlClipsManager.getClip(clipId);
+    if (clip && this.sparqlEditor) {
+      this.sparqlEditor.setValue(clip.query);
+      this.elements.sparqlClipsDialog.style.display = 'none';
+      this.showMessage(`Loaded SPARQL clip: ${clip.name}`, 'success');
+      this.logger.info(`SPARQL clip loaded: ${clip.name}`);
+    } else {
+      this.showMessage('Error loading clip.', 'error');
+      this.logger.error('Failed to load SPARQL clip:', clipId);
+    }
+  }
+
+  /**
+   * Delete a SPARQL clip
+   * @private
+   * @param {string} clipId - Clip ID
+   */
+  _deleteClip(clipId) {
+    const clip = this.sparqlClipsManager.getClip(clipId);
+    if (clip) {
+      if (confirm(`Are you sure you want to delete the clip "${clip.name}"?`)) {
+        if (this.sparqlClipsManager.deleteClip(clipId)) {
+          this._showClipsDialog(); // Refresh the dialog
+          this.showMessage(`Deleted SPARQL clip: ${clip.name}`, 'success');
+          this.logger.info(`SPARQL clip deleted: ${clip.name}`);
+        } else {
+          this.showMessage('Error deleting clip.', 'error');
+        }
+      }
+    }
+  }
+
+  /**
+   * Handle Clips Dialog Close button click
+   * @private
+   */
+  _handleSparqlClipsClose() {
+    this.elements.sparqlClipsDialog.style.display = 'none';
+  }
+
+  /**
+   * Escape HTML to prevent XSS
+   * @private
+   * @param {string} text - Text to escape
+   * @returns {string} Escaped text
+   */
+  _escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
   }
 
   /**
