@@ -222,11 +222,34 @@ export class SettingsManager {
 
     if (storedEndpoints) {
       this.sparqlEndpoints = JSON.parse(storedEndpoints);
+    } else {
+      // Initialize with default endpoints for first-time users
+      this.sparqlEndpoints = this.getDefaultEndpoints();
+      this.saveSparqlEndpoints();
+      this.logger.debug(`Initialized with ${this.sparqlEndpoints.length} default SPARQL endpoints`);
     }
-    this.activeSparqlEndpoint = storedActiveEndpoint;
+    
+    // Set active endpoint - use stored value or default to first endpoint
+    this.activeSparqlEndpoint = storedActiveEndpoint || (this.sparqlEndpoints.length > 0 ? this.sparqlEndpoints[0] : null);
+    
+    // Save the active endpoint if it was defaulted
+    if (!storedActiveEndpoint && this.activeSparqlEndpoint) {
+      this.saveActiveSparqlEndpoint();
+    }
 
     this.populateSparqlEndpointSelect();
     this.logger.debug('SPARQL endpoints loaded from localStorage');
+  }
+
+  /**
+   * Get default SPARQL endpoints for first-time initialization
+   * @returns {Array<string>} Array of default endpoint URLs
+   */
+  getDefaultEndpoints() {
+    return [
+      'https://query.wikidata.org/sparql',
+      'https://dbpedia.org/sparql'
+    ];
   }
 
   saveSparqlEndpoints() {

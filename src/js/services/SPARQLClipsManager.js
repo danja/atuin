@@ -28,9 +28,14 @@ export class SPARQLClipsManager {
       if (storedClips) {
         this.clips = JSON.parse(storedClips);
         this.logger?.info(`Loaded ${this.clips.length} SPARQL clips from localStorage`);
+        
+        // Check if we need to add missing default clips
+        this.ensureDefaultClips();
       } else {
-        this.clips = [];
-        this.logger?.info('No SPARQL clips found in localStorage');
+        // Initialize with default clips for first-time users
+        this.clips = this.getDefaultClips();
+        this.saveClips();
+        this.logger?.info(`Initialized with ${this.clips.length} default SPARQL clips`);
       }
     } catch (error) {
       this.logger?.error('Failed to load SPARQL clips from localStorage:', error.message);
@@ -49,6 +54,94 @@ export class SPARQLClipsManager {
     } catch (error) {
       this.logger?.error('Failed to save SPARQL clips to localStorage:', error.message);
       throw new Error('Failed to save clips to storage');
+    }
+  }
+
+  /**
+   * Get default SPARQL clips for first-time initialization
+   * @returns {Array<Object>} Array of default clip objects
+   */
+  getDefaultClips() {
+    const timestamp = Date.now();
+    return [
+      {
+        id: 'default_wikidata_countries',
+        name: 'Wikidata: Countries by Population',
+        query: `# Get countries with their populations (top 20)
+# Wikidata SPARQL query - works with https://query.wikidata.org/sparql
+
+SELECT ?country ?countryLabel ?population ?populationStatement WHERE {
+  ?country wdt:P31 wd:Q3624078 .  # sovereign state
+  ?country p:P1082 ?populationStatement .
+  ?populationStatement ps:P1082 ?population .
+  
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
+}
+ORDER BY DESC(?population)
+LIMIT 20`,
+        timestamp: timestamp - 1000,
+        created: new Date(timestamp - 1000).toISOString()
+      },
+      {
+        id: 'default_wikidata_simple',
+        name: 'Wikidata: Simple Example Query',
+        query: `# Simple query to get 10 items with labels
+# Wikidata SPARQL query - works with https://query.wikidata.org/sparql
+
+SELECT ?item ?itemLabel WHERE {
+  ?item wdt:P31 wd:Q5 .  # humans
+  ?item wdt:P106 wd:Q82955 .  # politicians
+  
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
+}
+LIMIT 10`,
+        timestamp: timestamp - 2000,
+        created: new Date(timestamp - 2000).toISOString()
+      },
+      {
+        id: 'default_basic_select',
+        name: 'Basic SELECT Query Template',
+        query: `# Basic SPARQL SELECT query template
+# Replace the example data with your own RDF data
+
+PREFIX ex: <http://example.org/>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+SELECT ?subject ?predicate ?object WHERE {
+  ?subject ?predicate ?object .
+}
+LIMIT 100`,
+        timestamp: timestamp - 3000,
+        created: new Date(timestamp - 3000).toISOString()
+      }
+    ];
+  }
+
+  /**
+   * Ensure that default clips are present, adding any that are missing
+   * @private
+   */
+  ensureDefaultClips() {
+    const defaultClips = this.getDefaultClips();
+    let addedClips = 0;
+
+    for (const defaultClip of defaultClips) {
+      // Check if this default clip already exists (by name or ID)
+      const exists = this.clips.some(clip => 
+        clip.id === defaultClip.id || 
+        clip.name === defaultClip.name
+      );
+
+      if (!exists) {
+        this.clips.push(defaultClip);
+        addedClips++;
+      }
+    }
+
+    if (addedClips > 0) {
+      this.saveClips();
+      this.logger?.info(`Added ${addedClips} missing default SPARQL clips`);
     }
   }
 

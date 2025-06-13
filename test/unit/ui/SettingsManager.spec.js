@@ -153,14 +153,16 @@ describe('SettingsManager', () => {
         expect(mockControls.sparqlEndpointSelect.options.find(o => o.value === endpoint1).selected).toBe(true);
       });
 
-      it('should handle no endpoints in localStorage', () => {
+      it('should handle no endpoints in localStorage by loading defaults', () => {
         mockControls.sparqlEndpointSelect.appendChild.mockClear();
         settingsManager.loadSparqlEndpoints();
 
-        expect(settingsManager.sparqlEndpoints).toEqual([]);
-        expect(settingsManager.activeSparqlEndpoint).toBeNull();
-        expect(mockControls.sparqlEndpointSelect.appendChild).toHaveBeenCalledTimes(1);
-        expect(mockControls.sparqlEndpointSelect.options[0].disabled).toBe(true);
+        expect(settingsManager.sparqlEndpoints).toEqual([
+          'https://query.wikidata.org/sparql',
+          'https://dbpedia.org/sparql'
+        ]);
+        expect(settingsManager.activeSparqlEndpoint).toBe('https://query.wikidata.org/sparql');
+        expect(mockControls.sparqlEndpointSelect.appendChild).toHaveBeenCalledTimes(2);
       });
     });
 
