@@ -8,7 +8,7 @@
 
 ## [Demo](https://danja.github.io/atuin/)
 
-**Status 2025-06-13 :** Mostly stable, just added various bugfixes & small new features. *Nearly* ready for proper use.
+**Status 2025-06-16 :** Mostly stable, just added various bugfixes & small new features. *Nearly* ready for proper use. Has (untried) [INTEGRATION.md](https://github.com/danja/atuin/blob/main/INTEGRATION.md) for sticking it in other apps. 
 
 **If you recognise the general design or even created the logo yourself, please let me know so I can acknowledge.** Atuin is all-new code but based heavily on someone else's design from years ago. Alas I forget who, and I didn't see a ref in the original code I have.
 
