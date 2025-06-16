@@ -28,6 +28,9 @@ Atuin is a web-based editor for Turtle RDF files with an integrated graph visual
 - Graph clustering for large datasets
 - Options to hide standard vocabulary nodes (RDF, RDFS, OWL)
 - Responsive split-pane layout
+- Reusable UI components for easy integration:
+  - SPARQL endpoint management
+  - Query clips for saving and reusing common queries
 
 ## Getting Started
 

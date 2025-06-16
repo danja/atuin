@@ -1,6 +1,6 @@
 {
   "name": "atuin",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "An RDF and SPARQL editor with graph visualization",
   "type": "module",
   "main": "./index.js",
@@ -25,7 +25,8 @@
     "src/js/**/*.d.ts",
     "dist/**/*",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "CHANGELOG.md"
   ],
   "scripts": {
     "build": "webpack --mode production",
